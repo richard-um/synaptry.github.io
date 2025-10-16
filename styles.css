@@ -1,0 +1,89 @@
+:root {
+  --bg:#fff;
+  --fg:#111;
+  --muted:#666;
+  --accent:#0a7;
+  --border:#eee;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.6;
+}
+.container { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  position: sticky; top: 0; z-index: 10;
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0;
+}
+.logo { font-weight: 700; font-size: 1.4rem; color: var(--accent); }
+.nav a { margin-left: 16px; font-weight: 500; }
+.btn {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid var(--accent);
+}
+.btn-primary {
+  background: var(--accent); color: #fff; border: none;
+}
+.btn-outline {
+  background: transparent; color: var(--accent);
+}
+.btn:hover { opacity: 0.9; }
+
+/* Hero */
+.hero {
+  padding: 80px 0; text-align: center;
+  background: linear-gradient(to bottom, #f8fff9 0%, #fff 100%);
+}
+.hero h1 { font-size: 2.5rem; margin-bottom: 16px; }
+.hero .accent { color: var(--accent); }
+.hero .lead { font-size: 1.1rem; color: var(--muted); margin-bottom: 24px; }
+.hero-actions a { margin: 0 8px; }
+
+/* Sections */
+.section { padding: 60px 0; }
+.section.alt { background: #f9f9f9; }
+.section h2 { font-size: 1.8rem; margin-bottom: 16px; }
+.grid-2 {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px; align-items: start;
+}
+.cards-3 {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.card {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.card h3 { margin-bottom: 8px; }
+ul.bullets, ul.checklist, ul.project-list, ul.contact-list {
+  list-style: none; margin-top: 8px;
+}
+ul.bullets li::before, ul.checklist li::before {
+  content: "• "; color: var(--accent);
+}
+ul.project-list li {
+  margin-bottom: 8px;
+}
+ul.contact-list li { margin-bottom: 6px; }
+
+/* Footer */
+.site-footer {
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+  color: var(--muted);
+}
