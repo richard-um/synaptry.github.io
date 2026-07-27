@@ -39,7 +39,6 @@
     }
     .btn-delete-post:hover { background: #ef4444; color: #ffffff; }
 
-    /* 시작 프롬프트 박스 */
     .post-summary-box {
       margin-top: 20px;
       padding: 16px 20px;
@@ -50,7 +49,6 @@
     .post-summary-box strong { color: var(--accent); display: block; margin-bottom: 6px; font-size: 0.95rem; }
     .post-summary-box p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
 
-    /* Git 흐름 다이어그램 영역 스타일 */
     .flow-diagram-container {
       display: none;
       margin: 25px 0;
@@ -60,11 +58,11 @@
       border-radius: 8px;
       animation: fadeIn 0.3s ease;
     }
+    .flow-diagram-container.active { display: block !important; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
     .flow-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
     
-    /* Git 그래프 노드 레이아웃 */
     .git-graph { display: flex; flex-direction: column; gap: 14px; position: relative; padding-left: 10px; }
     .git-graph::before {
       content: '';
@@ -111,7 +109,6 @@
     }
     .git-node.branch-main .git-dot { background: #3b82f6; }
     .git-node.branch-feature .git-dot { background: #10b981; }
-    .git-node.branch-fix .git-dot { background: #f59e0b; }
 
     .git-branch-tag {
       font-size: 0.75rem;
@@ -126,7 +123,6 @@
 
     .git-node-label { font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
 
-    /* 클릭 시 나타나는 요약 내용 박스 */
     .flow-preview-card {
       margin-top: 20px;
       padding: 16px 20px;
@@ -136,7 +132,7 @@
       display: none;
     }
     .flow-preview-card h4 { margin: 0 0 8px 0; color: var(--accent); font-size: 1.05rem; }
-    .flow-preview-card p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; }
+    .flow-preview-card p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
 
     .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
@@ -172,10 +168,9 @@
       <div class="flow-title">🌿 대화 흐름 다이어그램 (Git Branch View)</div>
       <div id="gitGraph" class="git-graph"></div>
       
-      <!-- 노드 클릭 시 표시되는 상세 요약 카드 -->
       <div id="flowPreviewCard" class="flow-preview-card">
         <h4 id="flowCardTitle">노드를 선택하세요</h4>
-        <p id="flowCardSummary">브랜치 노드를 클릭하면 해당 구간의 대화 요약과 본문 내용이 여기에 표시됩니다.</p>
+        <p id="flowCardSummary">브랜치 노드를 클릭하면 해당 구간의 대화 요약 내용이 표시됩니다.</p>
       </div>
     </section>
 
@@ -272,41 +267,45 @@
           <div class="post-content" id="mainPostContent">${parsedContent}</div>
         `;
 
-        // 대화 흐름 다이어그램 생성 파싱 및 이벤트 바인딩
         setupFlowDiagram(post);
 
-        document.getElementById("toggleFlowBtn").addEventListener("click", () => {
-          const flowContainer = document.getElementById("flowDiagramContainer");
-          const isHidden = getComputedStyle(flowContainer).display === "none";
-          flowContainer.style.display = isHidden ? "block" : "none";
-        });
+        const toggleBtn = document.getElementById("toggleFlowBtn");
+        const flowContainer = document.getElementById("flowDiagramContainer");
 
-        document.getElementById("deletePostBtn").addEventListener("click", () => {
-          const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
-          if (rawInput === null) return;
+        if (toggleBtn && flowContainer) {
+          toggleBtn.addEventListener("click", () => {
+            flowContainer.classList.toggle("active");
+          });
+        }
 
-          const inputPw = rawInput.trim();
-          const isAuthorMatch = post.password && inputPw === post.password;
-          const isAdminMatch = inputPw === ADMIN_PASSWORD;
+        const deleteBtn = document.getElementById("deletePostBtn");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", () => {
+            const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
+            if (rawInput === null) return;
 
-          if (isAuthorMatch || isAdminMatch) {
-            const confirmMsg = isAdminMatch 
-              ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
-              : "정말로 이 포스트를 삭제하시겠습니까?";
+            const inputPw = rawInput.trim();
+            const isAuthorMatch = post.password && inputPw === post.password;
+            const isAdminMatch = inputPw === ADMIN_PASSWORD;
 
-            if (confirm(confirmMsg)) {
-              remove(ref(db, `posts/${postId}`));
-              remove(ref(db, `comments/${postId}`));
-              alert("포스트가 성공적으로 삭제되었습니다.");
-              window.location.href = "index.html";
+            if (isAuthorMatch || isAdminMatch) {
+              const confirmMsg = isAdminMatch 
+                ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
+                : "정말로 이 포스트를 삭제하시겠습니까?";
+
+              if (confirm(confirmMsg)) {
+                remove(ref(db, `posts/${postId}`));
+                remove(ref(db, `comments/${postId}`));
+                alert("포스트가 성공적으로 삭제되었습니다.");
+                window.location.href = "index.html";
+              }
+            } else {
+              alert("비밀번호가 일치하지 않습니다.");
             }
-          } else {
-            alert("비밀번호가 일치하지 않습니다.");
-          }
-        });
+          });
+        }
       });
 
-      // 댓글 처리
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -342,7 +341,6 @@
       });
     }
 
-    // Git 흐름 노드 파싱 및 렌더링 함수
     function setupFlowDiagram(post) {
       const gitGraph = document.getElementById("gitGraph");
       const previewCard = document.getElementById("flowPreviewCard");
@@ -351,11 +349,9 @@
 
       let flowNodes = [];
 
-      // 1. Firebase 데이터에 flow 항목이 있으면 사용
       if (post.flow && Array.isArray(post.flow) && post.flow.length > 0) {
         flowNodes = post.flow;
       } else {
-        // 2. 흐름 데이터가 없는 경우: 본문(마크다운/HTML)의 H2, H3 제목 및 시작 프롬프트에서 자동 생성
         if (post.summary) {
           flowNodes.push({
             branch: "main",
@@ -383,7 +379,6 @@
           });
         });
 
-        // 헤딩이 없는 통글일 경우 단락 분할로 기본 노드 생성
         if (flowNodes.length === (post.summary ? 1 : 0)) {
           const paragraphs = (post.content || "").split("\n\n").filter(p => p.trim().length > 0);
           paragraphs.forEach((p, idx) => {
@@ -398,7 +393,7 @@
 
       gitGraph.innerHTML = "";
 
-      flowNodes.forEach((node, index) => {
+      flowNodes.forEach((node) => {
         const nodeEl = document.createElement("div");
         const branchClass = node.branch.includes("main") ? "branch-main" : "branch-feature";
         nodeEl.className = `git-node ${branchClass}`;
