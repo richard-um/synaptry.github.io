@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synaptry | Post Detail</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
+    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
+    .post-content { line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap; margin-bottom: 50px; }
+    
+    /* 댓글 영역 스타일 */
+    .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
+    .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
+    .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
+    .comment-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .comment-author { font-weight: bold; color: var(--accent); }
+    .btn-reply-toggle { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; }
+    
+    /* 댓글 폼 */
+    .comment-form { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .comment-form input, .comment-form textarea {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); padding: 10px;
+    }
+    .comment-form textarea { height: 80px; resize: vertical; }
+    .reply-form { margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border-radius: 6px; display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
+      <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
+    </div>
+  </header>
+
+  <main class="post-detail-container">
+    <div id="postArea">
+      <p style="color: var(--text-muted);">포스트를 불러오는 중입니다...</p>
+    </div>
+
+    <!-- 댓글 섹션 -->
+    <section class="comments-section">
+      <h3>💬 댓글 및 토론</h3>
+      <div id="commentsList" style="margin-top: 20px;">
+        <p style="color: var(--text-muted); font-size: 0.9rem;">작성된 댓글이 없습니다.</p>
+      </div>
+
+      <!-- 새 댓글 작성 폼 -->
+      <form id="commentForm" class="comment-form">
+        <h4>댓글 남기기</h4>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="commentAuthor" required placeholder="작성자 이름" style="flex: 1;">
+          <input type="password" id="commentPassword" placeholder="비밀번호(삭제용 선택사항)" style="flex: 1;">
+        </div>
+        <textarea id="commentContent" required placeholder="댓글을 작성하세요..."></textarea>
+        <button type="submit" class="btn-submit" style="align-self: flex-end; padding: 8px 20px;">댓글 등록</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
+      authDomain: "synaptry-db.firebaseapp.com",
+      databaseURL: "https://synaptry-db-default-rtdb.firebaseio.com",
+      projectId: "synaptry-db",
+      storageBucket: "synaptry-db.firebasestorage.app",
+      messagingSenderId: "980184606882",
+      appId: "1:980184606882:web:c5302bdf71b63e37db4ffb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // URL 파라미터에서 포스트 ID 추출
+    const urlParams = new URLSearchParams(window.location.search);
+    const postId = urlParams.get('id');
+
+    const postArea = document.getElementById("postArea");
+    const commentsList = document.getElementById("commentsList");
+
+    if (!postId) {
+      postArea.innerHTML = "<h2>잘못된 접근입니다.</h2>";
+    } else {
+      // 1. 포스트 본문 데이터 불러오기
+      onValue(ref(db, `posts/${postId}`), (snapshot) => {
+        const post = snapshot.val();
+        if (!post) {
+          postArea.innerHTML = "<h2>포스트를 찾을 수 없습니다.</h2>";
+          return;
+        }
+
+        const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+        postArea.innerHTML = `
+          <div class="post-header">
+            <h2>${post.title}</h2>
+            <div class="post-meta">
+              <span>🏷️ ${post.category}</span>
+              <span>📅 ${dateStr}</span>
+              <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+            </div>
+            ${post.summary ? `<p style="margin-top:15px; color:var(--accent);">💡 요약: ${post.summary}</p>` : ''}
+          </div>
+          <div class="post-content">${post.content}</div>
+        `;
+      });
+
+      // 2. 댓글 및 답글 불러오기
+      onValue(ref(db, `comments/${postId}`), (snapshot) => {
+        const comments = snapshot.val();
+        commentsList.innerHTML = "";
+
+        if (!comments) {
+          commentsList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">첫 번째 댓글을 작성해 보세요!</p>`;
+          return;
+        }
+
+        Object.keys(comments).forEach((key) => {
+          const c = comments[key];
+          const isReply = !!c.parentId;
+          const dateStr = new Date(c.createdAt).toLocaleString("ko-KR");
+
+          const commentEl = document.createElement("div");
+          commentEl.className = `comment-card ${isReply ? 'reply' : ''}`;
+          commentEl.innerHTML = `
+            <div class="comment-meta">
+              <span class="comment-author">${c.author}</span>
+              <span>${dateStr}</span>
+            </div>
+            <div>${c.content}</div>
+            ${!isReply ? `<button class="btn-reply-toggle" onclick="toggleReplyForm('${key}')">↳ 답글 달기</button>` : ''}
+            
+            <!-- 답글 입력 폼 -->
+            <div id="replyForm-${key}" class="reply-form">
+              <input type="text" id="replyAuthor-${key}" placeholder="작성자 이름" style="width:100%; margin-bottom:6px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px;">
+              <textarea id="replyContent-${key}" placeholder="답글을 입력하세요..." style="width:100%; height:50px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px; margin-bottom:6px;"></textarea>
+              <button type="button" class="btn-submit" style="padding:4px 12px; font-size:0.8rem;" onclick="submitReply('${key}')">답글 등록</button>
+            </div>
+          `;
+          commentsList.appendChild(commentEl);
+        });
+      });
+    }
+
+    // 메인 댓글 제출
+    document.getElementById("commentForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const author = document.getElementById("commentAuthor").value;
+      const content = document.getElementById("commentContent").value;
+
+      push(ref(db, `comments/${postId}`), {
+        author: author,
+        content: content,
+        createdAt: new Date().toISOString(),
+        parentId: null
+      }).then(() => {
+        document.getElementById("commentContent").value = "";
+      });
+    });
+
+    // 답글 폼 토글 및 제출 전역 함수 등록
+    window.toggleReplyForm = (commentId) => {
+      const form = document.getElementById(`replyForm-${commentId}`);
+      form.style.display = form.style.display === "block" ? "none" : "block";
+    };
+
+    window.submitReply = (parentId) => {
+      const author = document.getElementById(`replyAuthor-${parentId}`).value;
+      const content = document.getElementById(`replyContent-${parentId}`).value;
+
+      if (!author || !content) {
+        alert("이름과 답글 내용을 입력해주세요.");
+        return;
+      }
+
+      push(ref(db, `comments/${postId}`), {
+        author: author,
+        content: content,
+        createdAt: new Date().toISOString(),
+        parentId: parentId
+      }).then(() => {
+        document.getElementById(`replyForm-${parentId}`).style.display = "none";
+      });
+    };
+  </script>
+</body>
+</html>
