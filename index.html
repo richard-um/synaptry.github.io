@@ -16,6 +16,12 @@
     <div class="container header-container">
       <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
       <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
+      
+      <!-- 상단 검색 및 글쓰기 이동 링크 -->
+      <div style="margin-top: 18px; display: flex; gap: 12px; justify-content: center;">
+        <a href="search.html" style="color: var(--accent); text-decoration: none; font-weight: bold; padding: 6px 16px; border: 1px solid var(--accent); border-radius: 6px; background: rgba(59, 130, 246, 0.1); font-size: 0.9rem;">🔍 상세 검색</a>
+        <a href="write.html" style="color: var(--text-main); text-decoration: none; font-weight: bold; padding: 6px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); font-size: 0.9rem;">✍️ 글쓰기</a>
+      </div>
     </div>
   </header>
 
@@ -27,7 +33,7 @@
       </p>
     </section>
 
-    <!-- 카테고리 섹션 -->
+    <!-- 카테고리 그리드 섹션 -->
     <section class="categories">
       <h3>Categories</h3>
       <div class="grid">
@@ -39,45 +45,39 @@
         <div class="card" data-category="Software">
           <div class="badge">Software</div>
           <h4>소프트웨어</h4>
-          <p>C#, Android, Python, Web 백엔드/프론트엔드 및 AI 아키텍처</p>
+          <p>웹/앱 개발, 알고리즘, 시스템 아키텍처 및 자동화 코드</p>
         </div>
         <div class="card" data-category="Math">
-          <div class="badge">Mathematics</div>
+          <div class="badge">Math</div>
           <h4>수학</h4>
-          <p>공학수학, 선형대수학, 해석학 및 수치해석적 대화와 증명</p>
+          <p>선형대수학, 미적분학, 확률통계 및 이산수학적 사고</p>
         </div>
         <div class="card" data-category="Physics">
           <div class="badge">Physics</div>
           <h4>물리학</h4>
-          <p>고전역학, 전자기학, 양자역학 및 시뮬레이션 관련 탐구</p>
+          <p>전자기학, 역학, 양자물리 및 자연 현상의 수식화</p>
         </div>
         <div class="card" data-category="Philosophy">
           <div class="badge">Philosophy</div>
           <h4>철학</h4>
-          <p>인공지능 철학, 인식론, 공학적 윤리 및 고전적 사고실험</p>
+          <p>인공지능 윤리, 인식론, 존재론 및 AI와의 사유 과정</p>
         </div>
         <div class="card" data-category="Etc">
           <div class="badge">Etc</div>
           <h4>기타</h4>
-          <p>일상적 아이디어, 에세이, 잡학 및 분류되지 않은 대화 기록</p>
+          <p>일상의 정취, 소소한 생각, 그리고 정형화되지 않은 이야기들</p>
         </div>
       </div>
     </section>
 
-    <!-- 대화 기록 목록 -->
-    <section class="log-section">
-      <div class="category-title-wrap">
-        <h3 id="listTitle">Recent AI Conversations</h3>
-        <button id="resetFilterBtn" class="btn-reset-filter">전체보기</button>
+    <!-- 최근 포스트 목록 섹션 -->
+    <section class="posts-section" style="margin-top: 50px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="postsTitle" style="margin: 0;">최근 포스트</h3>
+        <button id="resetCategoryBtn" style="display: none; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">🔄 전체 보기</button>
       </div>
-
-      <ul class="log-list" id="logList">
-        <li class="log-item"><span class="date">포스트를 불러오는 중입니다...</span></li>
-      </ul>
-
-      <!-- 글쓰기 링크 -->
-      <div class="write-btn-container">
-        <a href="write.html" class="btn-write">✍️ 포스트 작성하기</a>
+      <div id="postsList" class="posts-list">
+        <p style="color: var(--text-muted);">포스트 목록을 불러오는 중입니다...</p>
       </div>
     </section>
   </main>
@@ -88,7 +88,6 @@
     </div>
   </footer>
 
-  <!-- Firebase 동적 연동 스크립트 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -106,86 +105,86 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let allPosts = {};
+    const postsList = document.getElementById("postsList");
+    const postsTitle = document.getElementById("postsTitle");
+    const resetCategoryBtn = document.getElementById("resetCategoryBtn");
+
+    let allPosts = [];
     let selectedCategory = null;
 
-    const logListEl = document.getElementById("logList");
-    const listTitleEl = document.getElementById("listTitle");
-    const resetFilterBtn = document.getElementById("resetFilterBtn");
-    const cards = document.querySelectorAll(".card");
-
-    onValue(ref(db, "posts"), (snapshot) => {
-      allPosts = snapshot.val() || {};
-      renderPosts();
-    });
-
-    function renderPosts() {
-      logListEl.innerHTML = "";
-      const keys = Object.keys(allPosts).reverse();
-
-      const filteredKeys = keys.filter(key => {
-        if (!selectedCategory) return true;
-        return allPosts[key].category === selectedCategory;
-      });
-
-      if (filteredKeys.length === 0) {
-        logListEl.innerHTML = `<li class="log-item"><span class="date">등록된 포스트가 없습니다.</span></li>`;
-        return;
-      }
-
-      filteredKeys.forEach(key => {
-        const post = allPosts[key];
-        const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
-
-        const li = document.createElement("li");
-        li.className = "log-item";
-        li.innerHTML = `
-          <span class="tag">${getCategoryName(post.category)}</span>
-          <a href="post.html?id=${key}">${post.title}</a>
-          <span class="date">${dateStr}</span>
-        `;
-        logListEl.appendChild(li);
-      });
-    }
-
     function getCategoryName(cat) {
-      const names = {
-        Hardware: "하드웨어",
-        Software: "소프트웨어",
-        Math: "수학",
-        Physics: "물리학",
-        Philosophy: "철학",
-        Etc: "기타"
-      };
+      const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
       return names[cat] || cat;
     }
 
-    cards.forEach(card => {
-      card.addEventListener("click", () => {
-        const category = card.getAttribute("data-category");
+    // 포스트 렌더링 함수
+    function renderPosts() {
+      let filteredPosts = allPosts;
+      if (selectedCategory) {
+        filteredPosts = allPosts.filter(p => p.category === selectedCategory);
+        postsTitle.innerText = `🏷️ ${getCategoryName(selectedCategory)} 포스트 (${filteredPosts.length})`;
+        resetCategoryBtn.style.display = "block";
+      } else {
+        postsTitle.innerText = "최근 포스트";
+        resetCategoryBtn.style.display = "none";
+      }
 
-        if (selectedCategory === category) {
-          clearFilter();
-        } else {
-          selectedCategory = category;
-          cards.forEach(c => c.classList.remove("active"));
-          card.classList.add("active");
-          listTitleEl.textContent = `${getCategoryName(category)} Posts`;
-          resetFilterBtn.style.display = "inline-block";
-          renderPosts();
-        }
+      if (filteredPosts.length === 0) {
+        postsList.innerHTML = `<p style="color: var(--text-muted); padding: 20px 0;">작성된 포스트가 없습니다.</p>`;
+        return;
+      }
+
+      postsList.innerHTML = filteredPosts.map(post => {
+        const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+        const summaryText = post.summary || (post.content ? post.content.substring(0, 100) + "..." : "");
+
+        return `
+          <div class="post-card" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 1.15rem;">
+              <a href="post.html?id=${post.id}" style="color: var(--text-main); text-decoration: none;">${post.title}</a>
+            </h4>
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 10px;">
+              <span>👤 ${post.author || '익명'}</span>
+              <span>🏷️ ${getCategoryName(post.category)}</span>
+              <span>📅 ${dateStr}</span>
+              <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+            </div>
+            <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin: 0;">${summaryText}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Firebase 데이터 로드
+    onValue(ref(db, "posts"), (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        postsList.innerHTML = `<p style="color: var(--text-muted);">등록된 포스트가 없습니다.</p>`;
+        return;
+      }
+
+      allPosts = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      renderPosts();
+    });
+
+    // 카테고리 카드 클릭 필터링
+    document.querySelectorAll(".categories .card").forEach(card => {
+      card.addEventListener("click", () => {
+        selectedCategory = card.getAttribute("data-category");
+        renderPosts();
+        document.querySelector(".posts-section").scrollIntoView({ behavior: 'smooth' });
       });
     });
 
-    resetFilterBtn.addEventListener("click", clearFilter);
-
-    function clearFilter() {
+    // 전체 보기 버튼 클릭
+    resetCategoryBtn.addEventListener("click", () => {
       selectedCategory = null;
-      cards.forEach(c => c.classList.remove("active"));
-      listTitleEl.textContent = "Recent AI Conversations";
-      resetFilterBtn.style.display = "none";
       renderPosts();
-    }
+    });
   </script>
 </body>
 </html>
