@@ -12,6 +12,29 @@
     .form-control { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 1rem; box-sizing: border-box; }
     .form-control:focus { outline: none; border-color: var(--accent); }
     textarea.form-control { resize: vertical; font-family: inherit; line-height: 1.5; }
+    
+    /* 리치 텍스트 에디터 영역 (contenteditable) */
+    .editor-control {
+      width: 100%;
+      min-height: 350px;
+      padding: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 1rem;
+      line-height: 1.6;
+      box-sizing: border-box;
+      overflow-y: auto;
+      outline: none;
+    }
+    .editor-control:focus { border-color: var(--accent); }
+    .editor-control[placeholder]:empty:before {
+      content: attr(placeholder);
+      color: var(--text-muted);
+      cursor: text;
+    }
+
     .form-row { display: flex; gap: 20px; }
     .form-row .form-group { flex: 1; }
     .btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
@@ -65,15 +88,15 @@
         </div>
       </div>
 
-      <!-- 한줄 요약 -> 시작 프롬프트 (3줄 분량 textarea) -->
       <div class="form-group">
         <label for="summary">시작 프롬프트 (선택)</label>
-        <textarea id="summary" class="form-control" style="height: 90px;" placeholder="AI와의 대화를 시작했던 초기 프롬프트나 맥락을 3줄 정도로 작성해 주세요"></textarea>
+        <textarea id="summary" class="form-control" style="height: 90px;" placeholder="AI와의 대화를 시작했던 초기 프롬프트나 맥락을 작성해 주세요"></textarea>
       </div>
 
       <div class="form-group">
-        <label for="content">본문 내용 (마크다운 지원)</label>
-        <textarea id="content" class="form-control" style="height: 350px; font-family: monospace;" required placeholder="마크다운 문법을 사용하여 자유롭게 작성하세요..."></textarea>
+        <label for="content">본문 내용 (Gemini 대화 복사/붙여넣기 지원)</label>
+        <!-- HTML 서식을 그대로 지원하는 에디터 입력창 -->
+        <div id="content" class="editor-control" contenteditable="true" placeholder="Gemini 대화 내용을 복사해서 여기에 붙여넣으세요..."></div>
       </div>
 
       <div class="btn-group">
@@ -102,6 +125,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const contentEditor = document.getElementById("content");
+
     function getFormData() {
       return {
         title: document.getElementById("title").value,
@@ -110,7 +135,7 @@
         aiModel: document.getElementById("aiModel").value,
         password: document.getElementById("password").value,
         summary: document.getElementById("summary").value,
-        content: document.getElementById("content").value
+        content: contentEditor.innerHTML // 서식 및 HTML 전체 저장
       };
     }
 
@@ -124,7 +149,7 @@
         document.getElementById("aiModel").value = draft.aiModel || "";
         document.getElementById("password").value = draft.password || "";
         document.getElementById("summary").value = draft.summary || "";
-        document.getElementById("content").value = draft.content || "";
+        contentEditor.innerHTML = draft.content || "";
       }
     });
 
@@ -137,6 +162,12 @@
     document.getElementById("writeForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const formData = getFormData();
+
+      if (!formData.content || formData.content.trim() === "") {
+        alert("본문 내용을 입력해주세요.");
+        return;
+      }
+
       formData.createdAt = new Date().toISOString();
 
       push(ref(db, "posts"), formData)
