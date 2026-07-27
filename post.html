@@ -10,14 +10,28 @@
   <style>
     .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
     .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
-    .post-meta-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
+    .post-meta-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 10px; gap: 10px; }
+    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; flex-wrap: wrap; }
     
+    .action-btn-group { display: flex; gap: 8px; }
+    .btn-flow-toggle {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #10b981;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-flow-toggle:hover { background: #10b981; color: #ffffff; }
+
     .btn-delete-post {
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid #ef4444;
       color: #ef4444;
-      padding: 4px 12px;
+      padding: 5px 12px;
       border-radius: 4px;
       font-size: 0.85rem;
       cursor: pointer;
@@ -35,6 +49,94 @@
     }
     .post-summary-box strong { color: var(--accent); display: block; margin-bottom: 6px; font-size: 0.95rem; }
     .post-summary-box p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
+
+    /* Git 흐름 다이어그램 영역 스타일 */
+    .flow-diagram-container {
+      display: none;
+      margin: 25px 0;
+      padding: 20px;
+      background: #0f172a;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .flow-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    
+    /* Git 그래프 노드 레이아웃 */
+    .git-graph { display: flex; flex-direction: column; gap: 14px; position: relative; padding-left: 10px; }
+    .git-graph::before {
+      content: '';
+      position: absolute;
+      left: 23px;
+      top: 15px;
+      bottom: 15px;
+      width: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      z-index: 1;
+    }
+
+    .git-node {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+      z-index: 2;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .git-node:hover {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+    .git-node.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: var(--accent);
+    }
+
+    .git-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid #0f172a;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+      flex-shrink: 0;
+    }
+    .git-node.branch-main .git-dot { background: #3b82f6; }
+    .git-node.branch-feature .git-dot { background: #10b981; }
+    .git-node.branch-fix .git-dot { background: #f59e0b; }
+
+    .git-branch-tag {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-family: monospace;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+    .git-node.branch-main .git-branch-tag { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .git-node.branch-feature .git-branch-tag { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+    .git-node-label { font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
+
+    /* 클릭 시 나타나는 요약 내용 박스 */
+    .flow-preview-card {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: none;
+    }
+    .flow-preview-card h4 { margin: 0 0 8px 0; color: var(--accent); font-size: 1.05rem; }
+    .flow-preview-card p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; }
 
     .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
@@ -64,6 +166,18 @@
     <div id="postArea">
       <p style="color: var(--text-muted);">포스트를 불러오는 중입니다...</p>
     </div>
+
+    <!-- Git 브랜치 흐름도 영역 -->
+    <section id="flowDiagramContainer" class="flow-diagram-container">
+      <div class="flow-title">🌿 대화 흐름 다이어그램 (Git Branch View)</div>
+      <div id="gitGraph" class="git-graph"></div>
+      
+      <!-- 노드 클릭 시 표시되는 상세 요약 카드 -->
+      <div id="flowPreviewCard" class="flow-preview-card">
+        <h4 id="flowCardTitle">노드를 선택하세요</h4>
+        <p id="flowCardSummary">브랜치 노드를 클릭하면 해당 구간의 대화 요약과 본문 내용이 여기에 표시됩니다.</p>
+      </div>
+    </section>
 
     <section class="comments-section">
       <h3>💬 댓글 및 토론</h3>
@@ -141,7 +255,10 @@
                 <span>📅 ${dateStr}</span>
                 <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
               </div>
-              <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
+              <div class="action-btn-group">
+                <button class="btn-flow-toggle" id="toggleFlowBtn">🌿 대화 흐름보기</button>
+                <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
+              </div>
             </div>
             
             ${post.summary ? `
@@ -152,8 +269,17 @@
             ` : ''}
           </div>
           
-          <div class="post-content">${parsedContent}</div>
+          <div class="post-content" id="mainPostContent">${parsedContent}</div>
         `;
+
+        // 대화 흐름 다이어그램 생성 파싱 및 이벤트 바인딩
+        setupFlowDiagram(post);
+
+        document.getElementById("toggleFlowBtn").addEventListener("click", () => {
+          const flowContainer = document.getElementById("flowDiagramContainer");
+          const isHidden = getComputedStyle(flowContainer).display === "none";
+          flowContainer.style.display = isHidden ? "block" : "none";
+        });
 
         document.getElementById("deletePostBtn").addEventListener("click", () => {
           const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
@@ -180,6 +306,7 @@
         });
       });
 
+      // 댓글 처리
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -212,6 +339,86 @@
           `;
           commentsList.appendChild(commentEl);
         });
+      });
+    }
+
+    // Git 흐름 노드 파싱 및 렌더링 함수
+    function setupFlowDiagram(post) {
+      const gitGraph = document.getElementById("gitGraph");
+      const previewCard = document.getElementById("flowPreviewCard");
+      const cardTitle = document.getElementById("flowCardTitle");
+      const cardSummary = document.getElementById("flowCardSummary");
+
+      let flowNodes = [];
+
+      // 1. Firebase 데이터에 flow 항목이 있으면 사용
+      if (post.flow && Array.isArray(post.flow) && post.flow.length > 0) {
+        flowNodes = post.flow;
+      } else {
+        // 2. 흐름 데이터가 없는 경우: 본문(마크다운/HTML)의 H2, H3 제목 및 시작 프롬프트에서 자동 생성
+        if (post.summary) {
+          flowNodes.push({
+            branch: "main",
+            title: "🚀 시작 프롬프트 (초기 논제)",
+            summary: post.summary
+          });
+        }
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = marked.parse(post.content || "");
+        const headings = tempDiv.querySelectorAll("h1, h2, h3");
+
+        headings.forEach((h, idx) => {
+          let nextElem = h.nextElementSibling;
+          let contentSnippet = "";
+          while (nextElem && !['H1','H2','H3'].includes(nextElem.tagName)) {
+            contentSnippet += nextElem.innerText + " ";
+            nextElem = nextElem.nextElementSibling;
+          }
+
+          flowNodes.push({
+            branch: idx === 0 ? "main" : (idx % 2 === 1 ? "feature/deep-dive" : "feature/resolution"),
+            title: h.innerText,
+            summary: contentSnippet.trim().substring(0, 200) + (contentSnippet.length > 200 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다."
+          });
+        });
+
+        // 헤딩이 없는 통글일 경우 단락 분할로 기본 노드 생성
+        if (flowNodes.length === (post.summary ? 1 : 0)) {
+          const paragraphs = (post.content || "").split("\n\n").filter(p => p.trim().length > 0);
+          paragraphs.forEach((p, idx) => {
+            flowNodes.push({
+              branch: idx === 0 ? "main" : "feature/discussion",
+              title: `대화/탐구 단계 ${idx + 1}`,
+              summary: p.substring(0, 150) + (p.length > 150 ? "..." : "")
+            });
+          });
+        }
+      }
+
+      gitGraph.innerHTML = "";
+
+      flowNodes.forEach((node, index) => {
+        const nodeEl = document.createElement("div");
+        const branchClass = node.branch.includes("main") ? "branch-main" : "branch-feature";
+        nodeEl.className = `git-node ${branchClass}`;
+        
+        nodeEl.innerHTML = `
+          <div class="git-dot"></div>
+          <span class="git-branch-tag">${node.branch || 'main'}</span>
+          <span class="git-node-label">${node.title}</span>
+        `;
+
+        nodeEl.addEventListener("click", () => {
+          document.querySelectorAll(".git-node").forEach(n => n.classList.remove("active"));
+          nodeEl.classList.add("active");
+
+          previewCard.style.display = "block";
+          cardTitle.innerText = `${node.branch ? '[' + node.branch + '] ' : ''}${node.title}`;
+          cardSummary.innerText = node.summary || "내용이 없습니다.";
+        });
+
+        gitGraph.appendChild(nodeEl);
       });
     }
 
