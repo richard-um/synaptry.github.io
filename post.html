@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Post Detail</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
@@ -134,7 +133,11 @@
     .flow-preview-card h4 { margin: 0 0 8px 0; color: var(--accent); font-size: 1.05rem; }
     .flow-preview-card p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
 
-    .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
+    /* Gemini 및 외부 복사 서식 보존을 위한 리치 텍스트 스타일링 */
+    .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; overflow-x: auto; }
+    .post-content p { margin-bottom: 1em; }
+    .post-content pre, .post-content code { max-width: 100%; overflow-x: auto; }
+
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
     .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
     .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
@@ -238,8 +241,8 @@
         }
 
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
-        const parsedContent = marked.parse(post.content || "");
 
+        // 마크다운 파싱을 사용하지 않고 post.content HTML 원본을 그대로 바인딩
         postArea.innerHTML = `
           <div class="post-header">
             <h2>${post.title}</h2>
@@ -264,7 +267,7 @@
             ` : ''}
           </div>
           
-          <div class="post-content" id="mainPostContent">${parsedContent}</div>
+          <div class="post-content" id="mainPostContent">${post.content || ""}</div>
         `;
 
         setupFlowDiagram(post);
@@ -360,27 +363,32 @@
           });
         }
 
+        // 마크다운 의존 대신 DOM 해석으로 제목(H1~H3)을 파싱하여 대화 노드 자동 생성
         const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = marked.parse(post.content || "");
-        const headings = tempDiv.querySelectorAll("h1, h2, h3");
+        tempDiv.innerHTML = post.content || "";
+        const headings = tempDiv.querySelectorAll("h1, h2, h3, h4, strong");
 
         headings.forEach((h, idx) => {
           let nextElem = h.nextElementSibling;
           let contentSnippet = "";
-          while (nextElem && !['H1','H2','H3'].includes(nextElem.tagName)) {
-            contentSnippet += nextElem.innerText + " ";
+          while (nextElem && !['H1','H2','H3','H4'].includes(nextElem.tagName)) {
+            contentSnippet += (nextElem.innerText || nextElem.textContent || "") + " ";
             nextElem = nextElem.nextElementSibling;
           }
 
-          flowNodes.push({
-            branch: idx === 0 ? "main" : (idx % 2 === 1 ? "feature/deep-dive" : "feature/resolution"),
-            title: h.innerText,
-            summary: contentSnippet.trim().substring(0, 200) + (contentSnippet.length > 200 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다."
-          });
+          const nodeTitle = h.innerText || h.textContent;
+          if (nodeTitle && nodeTitle.trim().length > 0) {
+            flowNodes.push({
+              branch: idx === 0 ? "main" : (idx % 2 === 1 ? "feature/deep-dive" : "feature/resolution"),
+              title: nodeTitle.trim(),
+              summary: contentSnippet.trim().substring(0, 200) + (contentSnippet.length > 200 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다."
+            });
+          }
         });
 
         if (flowNodes.length === (post.summary ? 1 : 0)) {
-          const paragraphs = (post.content || "").split("\n\n").filter(p => p.trim().length > 0);
+          const textContent = tempDiv.innerText || tempDiv.textContent || "";
+          const paragraphs = textContent.split("\n\n").filter(p => p.trim().length > 0);
           paragraphs.forEach((p, idx) => {
             flowNodes.push({
               branch: idx === 0 ? "main" : "feature/discussion",
