@@ -10,7 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
-    /* 마크다운 에디터 & 미리보기 스타일 */
     .md-toolbar {
       display: flex;
       gap: 6px;
@@ -51,12 +50,14 @@
       font-size: 0.95rem;
     }
 
-    /* 미리보기 내부 마크다운 요소 스타일 */
     .preview-box h1, .preview-box h2, .preview-box h3 { color: var(--accent); margin: 12px 0 8px 0; }
     .preview-box blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-muted); margin: 10px 0; }
     .preview-box pre { background: #0b1120; padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; }
     .preview-box code { background: rgba(255, 255, 255, 0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
     .preview-box pre code { background: none; padding: 0; }
+    
+    .form-row { display: flex; gap: 15px; }
+    .form-row .form-group { flex: 1; }
   </style>
 </head>
 <body>
@@ -70,35 +71,51 @@
   <main class="write-container">
     <h2>✍️ 새 포스트 기록하기</h2>
     <form id="postForm" style="margin-top: 20px;">
+      
+      <!-- 작성자 & 비밀번호 입력란 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="author">작성자 이름</label>
+          <input type="text" id="author" required placeholder="작성자 이름을 입력하세요">
+        </div>
+        <div class="form-group">
+          <label for="password">삭제 비밀번호</label>
+          <input type="password" id="password" required placeholder="포스트 삭제 시 필요한 비밀번호">
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="title">제목</label>
         <input type="text" id="title" required placeholder="포스트 제목을 입력하세요">
       </div>
-      <div class="form-group">
-        <label for="category">카테고리</label>
-        <select id="category">
-          <option value="Hardware">하드웨어 (Hardware)</option>
-          <option value="Software">소프트웨어 (Software)</option>
-          <option value="Math">수학 (Mathematics)</option>
-          <option value="Physics">물리학 (Physics)</option>
-          <option value="Philosophy">철학 (Philosophy)</option>
-          <option value="Etc">기타 (Etc)</option>
-        </select>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">카테고리</label>
+          <select id="category">
+            <option value="Hardware">하드웨어 (Hardware)</option>
+            <option value="Software">소프트웨어 (Software)</option>
+            <option value="Math">수학 (Mathematics)</option>
+            <option value="Physics">물리학 (Physics)</option>
+            <option value="Philosophy">철학 (Philosophy)</option>
+            <option value="Etc">기타 (Etc)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="aiModel">사용된 AI 모델</label>
+          <input type="text" id="aiModel" placeholder="예: Gemini 1.5 Pro, Claude 3.5 Sonnet">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="aiModel">사용된 AI 모델</label>
-        <input type="text" id="aiModel" placeholder="예: Gemini 1.5 Pro, Claude 3.5 Sonnet">
-      </div>
+
       <div class="form-group">
         <label for="summary">요약 (Summary)</label>
         <input type="text" id="summary" placeholder="핵심 내용 한 줄 요약">
       </div>
       
-      <!-- 마크다운 본문 에디터 + 미리보기 영역 -->
+      <!-- 마크다운 에디터 & 실시간 미리보기 -->
       <div class="form-group">
         <label for="content">본문 내용 (Markdown 지원)</label>
         
-        <!-- 마크다운 단축 툴바 -->
         <div class="md-toolbar">
           <button type="button" class="md-btn" onclick="insertMD('**', '**')">B (굵게)</button>
           <button type="button" class="md-btn" onclick="insertMD('## ', '')">H2 (제목)</button>
@@ -150,12 +167,10 @@
     const contentTextarea = document.getElementById("content");
     const previewDiv = document.getElementById("preview");
 
-    // 실시간 마크다운 미리보기 업데이트
     contentTextarea.addEventListener("input", () => {
       previewDiv.innerHTML = marked.parse(contentTextarea.value || "");
     });
 
-    // 툴바 버튼 클릭 시 문법 자동 삽입
     window.insertMD = (before, after) => {
       const start = contentTextarea.selectionStart;
       const end = contentTextarea.selectionEnd;
@@ -165,16 +180,15 @@
       contentTextarea.value = contentTextarea.value.substring(0, start) + replacement + contentTextarea.value.substring(end);
       contentTextarea.focus();
       contentTextarea.setSelectionRange(start + before.length, end + before.length);
-      
-      // 미리보기 갱신
       previewDiv.innerHTML = marked.parse(contentTextarea.value);
     };
 
-    // 폼 제출 (Firebase 저장)
     document.getElementById("postForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
       const postData = {
+        author: document.getElementById("author").value,
+        password: document.getElementById("password").value,
         title: document.getElementById("title").value,
         category: document.getElementById("category").value,
         aiModel: document.getElementById("aiModel").value,
