@@ -6,7 +6,6 @@
   <title>Synaptry | AI Collaborations & Tech Archive</title>
   <link rel="stylesheet" href="styles.css">
   <script>
-    // github.io 주소로 접속했을 때 커스텀 도메인으로 이동시키는 예시
     if (window.location.hostname.includes('github.io')) {
       window.location.href = 'https://www.synaptry.com' + window.location.pathname;
     }
@@ -21,56 +20,43 @@
   </header>
 
   <main class="container">
-    <!-- 인트로 섹션 -->
     <section class="intro">
       <h2>About Synaptry</h2>
       <p>
-        Synaptry는 하드웨어 설계부터 임베디드, C#, 모바일, 파이썬 개발은 물론 
-        수학과 철학에 대한 통찰을 AI와의 협업(Dialogue)을 통해 풀어내는 공간입니다.
+        Synaptry는 하드웨어 설계부터 임베디드, C#, 모바일, 파이썬 개발은 물론 수학과 철학에 대한 통찰을 AI와의 협업(Dialogue)을 통해 풀어내는 공간입니다.
       </p>
     </section>
 
-    <!-- 카테고리 필터 / 하위 분류 -->
+    <!-- 카테고리 섹션 -->
     <section class="categories">
       <h3>Categories</h3>
       <div class="grid">
-        <!-- 하드웨어 & 임베디드 -->
-        <div class="card">
+        <div class="card" data-category="Hardware">
           <div class="badge">Engineering</div>
           <h4>Hardware & Embedded</h4>
           <p>회로 설계, PCB, MCU, RTOS, 임베디드 C/C++ 및 AI 인터랙션</p>
         </div>
-
-        <!-- C# / Windows -->
-        <div class="card">
+        <div class="card" data-category="C#">
           <div class="badge">Desktop</div>
           <h4>C# & Windows Apps</h4>
           <p>.NET Desktop 애플리케이션 개발, GUI 및 시스템 프로그램</p>
         </div>
-
-        <!-- Mobile App -->
-        <div class="card">
+        <div class="card" data-category="Android">
           <div class="badge">Mobile</div>
           <h4>Android App Dev</h4>
           <p>안드로이드 앱 개발, 모바일 시스템 연동 및 모바일 UI/UX</p>
         </div>
-
-        <!-- Python & Automation -->
-        <div class="card">
+        <div class="card" data-category="Python">
           <div class="badge">Software</div>
           <h4>Python & AI Scripts</h4>
           <p>데이터 처리, 자동화, 백엔드 및 AI 프롬프트 실험 archive</p>
         </div>
-
-        <!-- 수학 -->
-        <div class="card">
+        <div class="card" data-category="Math">
           <div class="badge">Theory</div>
           <h4>Mathematics</h4>
           <p>공학 수학, 선형대수, 해석학 및 수치해석적 대화</p>
         </div>
-
-        <!-- 철학 -->
-        <div class="card">
+        <div class="card" data-category="Philosophy">
           <div class="badge">Humanities</div>
           <h4>Philosophy & Thought</h4>
           <p>인공지능 철학, 인식론, 공학적 윤리 및 고전 탐구</p>
@@ -78,26 +64,21 @@
       </div>
     </section>
 
-    <!-- 대화 기록 샘플 목록 -->
+    <!-- 대화 기록 목록 -->
     <section class="log-section">
-      <h3>Recent AI Conversations</h3>
-      <ul class="log-list">
-        <li class="log-item">
-          <span class="tag">Hardware</span>
-          <a href="#">STM32 기반 저전력 모드 설계 시 AI와 디버깅한 기록</a>
-          <span class="date">2026.07.27</span>
-        </li>
-        <li class="log-item">
-          <span class="tag">C#</span>
-          <a href="#">WPF 비동기 데이터 바인딩 패턴 성능 최적화 대화</a>
-          <span class="date">2026.07.25</span>
-        </li>
-        <li class="log-item">
-          <span class="tag">Philosophy</span>
-          <a href="#">강인공지능(AGI)의 의식 존재 가능성에 대한 철학적 토론</a>
-          <span class="date">2026.07.20</span>
-        </li>
+      <div class="category-title-wrap">
+        <h3 id="listTitle">Recent AI Conversations</h3>
+        <button id="resetFilterBtn" class="btn-reset-filter">전체보기</button>
+      </div>
+
+      <ul class="log-list" id="logList">
+        <li class="log-item"><span class="date">포스트를 불러오는 중입니다...</span></li>
       </ul>
+
+      <!-- 글쓰기 링크 -->
+      <div class="write-btn-container">
+        <a href="write.html" class="btn-write">✍️ 포스트 작성하기</a>
+      </div>
     </section>
   </main>
 
@@ -106,5 +87,93 @@
       <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
     </div>
   </footer>
+
+  <!-- Firebase 동적 연동 스크립트 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
+      authDomain: "synaptry-db.firebaseapp.com",
+      databaseURL: "https://synaptry-db-default-rtdb.firebaseio.com",
+      projectId: "synaptry-db",
+      storageBucket: "synaptry-db.firebasestorage.app",
+      messagingSenderId: "980184606882",
+      appId: "1:980184606882:web:c5302bdf71b63e37db4ffb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let allPosts = {};
+    let selectedCategory = null;
+
+    const logListEl = document.getElementById("logList");
+    const listTitleEl = document.getElementById("listTitle");
+    const resetFilterBtn = document.getElementById("resetFilterBtn");
+    const cards = document.querySelectorAll(".card");
+
+    onValue(ref(db, "posts"), (snapshot) => {
+      allPosts = snapshot.val() || {};
+      renderPosts();
+    });
+
+    function renderPosts() {
+      logListEl.innerHTML = "";
+      const keys = Object.keys(allPosts).reverse();
+
+      const filteredKeys = keys.filter(key => {
+        if (!selectedCategory) return true;
+        return allPosts[key].category === selectedCategory;
+      });
+
+      if (filteredKeys.length === 0) {
+        logListEl.innerHTML = `<li class="log-item"><span class="date">등록된 포스트가 없습니다.</span></li>`;
+        return;
+      }
+
+      filteredKeys.forEach(key => {
+        const post = allPosts[key];
+        const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+
+        const li = document.createElement("li");
+        li.className = "log-item";
+        li.innerHTML = `
+          <span class="tag">${post.category}</span>
+          <a href="post.html?id=${key}">${post.title}</a>
+          <span class="date">${dateStr}</span>
+        `;
+        logListEl.appendChild(li);
+      });
+    }
+
+    cards.forEach(card => {
+      card.addEventListener("click", () => {
+        const category = card.getAttribute("data-category");
+
+        if (selectedCategory === category) {
+          clearFilter();
+        } else {
+          selectedCategory = category;
+          cards.forEach(c => c.classList.remove("active"));
+          card.classList.add("active");
+          listTitleEl.textContent = `${category} Posts`;
+          resetFilterBtn.style.display = "inline-block";
+          renderPosts();
+        }
+      });
+    });
+
+    resetFilterBtn.addEventListener("click", clearFilter);
+
+    function clearFilter() {
+      selectedCategory = null;
+      cards.forEach(c => c.classList.remove("active"));
+      listTitleEl.textContent = "Recent AI Conversations";
+      resetFilterBtn.style.display = "none";
+      renderPosts();
+    }
+  </script>
 </body>
 </html>
