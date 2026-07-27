@@ -5,59 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Write Post</title>
   <link rel="stylesheet" href="styles.css">
-  
-  <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
+    /* 다변화된 마크다운 툴바 스타일 */
     .md-toolbar {
       display: flex;
       gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       flex-wrap: wrap;
-    }
-    .md-btn {
       background: var(--card-bg);
-      border: 1px solid var(--border);
-      color: var(--accent);
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .md-btn:hover {
-      background: rgba(56, 189, 248, 0.1);
-    }
-    
-    .editor-preview-split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    @media (max-width: 768px) {
-      .editor-preview-split { grid-template-columns: 1fr; }
-    }
-
-    .preview-box {
-      background: var(--card-bg);
+      padding: 8px;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 12px;
-      height: 300px;
-      overflow-y: auto;
-      line-height: 1.6;
-      font-size: 0.95rem;
     }
-
-    .preview-box h1, .preview-box h2, .preview-box h3 { color: var(--accent); margin: 12px 0 8px 0; }
-    .preview-box blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-muted); margin: 10px 0; }
-    .preview-box pre { background: #0b1120; padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; }
-    .preview-box code { background: rgba(255, 255, 255, 0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
-    .preview-box pre code { background: none; padding: 0; }
+    .md-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .md-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .md-divider {
+      width: 1px;
+      background: var(--border);
+      margin: 0 4px;
+    }
     
     .form-row { display: flex; gap: 15px; }
     .form-row .form-group { flex: 1; }
+
+    .btn-preview {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid #f59e0b;
+      color: #f59e0b;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-preview:hover {
+      background: #f59e0b;
+      color: #000;
+    }
+
+    textarea#content {
+      width: 100%;
+      height: 420px;
+      resize: vertical;
+      line-height: 1.6;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -112,29 +122,44 @@
         <input type="text" id="summary" placeholder="핵심 내용 한 줄 요약">
       </div>
       
-      <!-- 마크다운 에디터 & 실시간 미리보기 -->
+      <!-- 마크다운 에디터 (다양한 툴바 지원) -->
       <div class="form-group">
         <label for="content">본문 내용 (Markdown 지원)</label>
         
         <div class="md-toolbar">
-          <button type="button" class="md-btn" onclick="insertMD('**', '**')">B (굵게)</button>
-          <button type="button" class="md-btn" onclick="insertMD('## ', '')">H2 (제목)</button>
-          <button type="button" class="md-btn" onclick="insertMD('```\n', '\n```')">Code (코드블록)</button>
-          <button type="button" class="md-btn" onclick="insertMD('> ', '')">Quote (인용)</button>
-          <button type="button" class="md-btn" onclick="insertMD('- ', '')">List (목록)</button>
-          <button type="button" class="md-btn" onclick="insertMD('[', '](https://)')">Link (링크)</button>
+          <!-- 제목 레벨 -->
+          <button type="button" class="md-btn" onclick="insertMD('# ', '')">H1</button>
+          <button type="button" class="md-btn" onclick="insertMD('## ', '')">H2</button>
+          <button type="button" class="md-btn" onclick="insertMD('### ', '')">H3</button>
+          <div class="md-divider"></div>
+          
+          <!-- 서식 -->
+          <button type="button" class="md-btn" onclick="insertMD('**', '**')"><b>B</b> 굵게</button>
+          <button type="button" class="md-btn" onclick="insertMD('*', '*')"><i>I</i> 기울임</button>
+          <button type="button" class="md-btn" onclick="insertMD('~~', '~~')"><s>S</s> 취소선</button>
+          <button type="button" class="md-btn" onclick="insertMD('`', '`')">Inline Code</button>
+          <div class="md-divider"></div>
+
+          <!-- 블록/기능 요소 -->
+          <button type="button" class="md-btn" onclick="insertMD('```\n', '\n```')">💻 코드블록</button>
+          <button type="button" class="md-btn" onclick="insertMD('> ', '')">💬 인용구</button>
+          <button type="button" class="md-btn" onclick="insertMD('- ', '')">• 목록</button>
+          <button type="button" class="md-btn" onclick="insertMD('1. ', '')">1. 숫자목록</button>
+          <button type="button" class="md-btn" onclick="insertMD('- [ ] ', '')">☑️ 체크리스트</button>
+          <div class="md-divider"></div>
+
+          <!-- 미디어/표/기타 -->
+          <button type="button" class="md-btn" onclick="insertMD('[', '](https://)')">🔗 링크</button>
+          <button type="button" class="md-btn" onclick="insertMD('![설명](', ')')">🖼️ 이미지</button>
+          <button type="button" class="md-btn" onclick="insertMD('| 헤더1 | 헤더2 |\n| --- | --- |\n| 내용1 | 내용2 |', '')">📊 표</button>
+          <button type="button" class="md-btn" onclick="insertMD('\n---\n', '')">➖ 구분선</button>
         </div>
 
-        <div class="editor-preview-split">
-          <textarea id="content" required placeholder="AI와의 대화 기록, 마크다운 문법, 코드 등을 자유롭게 작성하세요."></textarea>
-          <div>
-            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px;">👁️ 실시간 미리보기</div>
-            <div id="preview" class="preview-box"></div>
-          </div>
-        </div>
+        <textarea id="content" required placeholder="AI와의 대화 기록, 마크다운 문법, 코드 등을 자유롭게 작성하세요."></textarea>
       </div>
 
-      <div class="btn-group">
+      <div class="btn-group" style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+        <button type="button" class="btn-preview" onclick="openPreview()">👁️ 미리보기</button>
         <a href="index.html" class="btn-cancel">취소</a>
         <button type="submit" class="btn-submit">저장 및 게시</button>
       </div>
@@ -165,12 +190,8 @@
     const db = getDatabase(app);
 
     const contentTextarea = document.getElementById("content");
-    const previewDiv = document.getElementById("preview");
 
-    contentTextarea.addEventListener("input", () => {
-      previewDiv.innerHTML = marked.parse(contentTextarea.value || "");
-    });
-
+    // 툴바 버튼 클릭 시 커서 위치에 문법 삽입
     window.insertMD = (before, after) => {
       const start = contentTextarea.selectionStart;
       const end = contentTextarea.selectionEnd;
@@ -180,9 +201,24 @@
       contentTextarea.value = contentTextarea.value.substring(0, start) + replacement + contentTextarea.value.substring(end);
       contentTextarea.focus();
       contentTextarea.setSelectionRange(start + before.length, end + before.length);
-      previewDiv.innerHTML = marked.parse(contentTextarea.value);
     };
 
+    // preview.html 페이지로 팝업/새 창 띄우기
+    window.openPreview = () => {
+      const previewData = {
+        author: document.getElementById("author").value,
+        title: document.getElementById("title").value,
+        category: document.getElementById("category").value,
+        aiModel: document.getElementById("aiModel").value,
+        summary: document.getElementById("summary").value,
+        content: contentTextarea.value
+      };
+
+      sessionStorage.setItem("synaptry_preview_data", JSON.stringify(previewData));
+      window.open("preview.html", "_blank");
+    };
+
+    // 폼 제출 (Firebase 저장)
     document.getElementById("postForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
