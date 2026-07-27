@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Post Detail</title>
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <style>
     .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
     .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
     .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
-    .post-content { line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap; margin-bottom: 50px; }
     
+    /* 마크다운 스타일링 (코드 블록, 인용구 등) */
+    .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
+    .post-content h1, .post-content h2, .post-content h3 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
+    .post-content p { margin-bottom: 16px; }
+    .post-content ul, .post-content ol { padding-left: 20px; margin-bottom: 16px; }
+    .post-content blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--text-muted); margin: 16px 0; }
+    .post-content pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+    .post-content code { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .post-content pre code { background: none; padding: 0; }
+    .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
+
     /* 댓글 영역 스타일 */
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
     .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
@@ -53,7 +67,7 @@
         <h4>댓글 남기기</h4>
         <div style="display: flex; gap: 10px;">
           <input type="text" id="commentAuthor" required placeholder="작성자 이름" style="flex: 1;">
-          <input type="password" id="commentPassword" placeholder="비밀번호(삭제용 선택사항)" style="flex: 1;">
+          <input type="password" id="commentPassword" placeholder="비밀번호(선택)" style="flex: 1;">
         </div>
         <textarea id="commentContent" required placeholder="댓글을 작성하세요..."></textarea>
         <button type="submit" class="btn-submit" style="align-self: flex-end; padding: 8px 20px;">댓글 등록</button>
@@ -84,17 +98,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // URL 파라미터에서 포스트 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 
     const postArea = document.getElementById("postArea");
     const commentsList = document.getElementById("commentsList");
 
+    function getCategoryName(cat) {
+      const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
+      return names[cat] || cat;
+    }
+
     if (!postId) {
       postArea.innerHTML = "<h2>잘못된 접근입니다.</h2>";
     } else {
-      // 1. 포스트 본문 데이터 불러오기
+      // 1. 포스트 본문 파싱 및 마크다운 변환
       onValue(ref(db, `posts/${postId}`), (snapshot) => {
         const post = snapshot.val();
         if (!post) {
@@ -103,21 +121,25 @@
         }
 
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+        
+        // Marked.js를 이용해 마크다운을 HTML로 파싱
+        const parsedContent = marked.parse(post.content || "");
+
         postArea.innerHTML = `
           <div class="post-header">
             <h2>${post.title}</h2>
             <div class="post-meta">
-              <span>🏷️ ${post.category}</span>
+              <span>🏷️ ${getCategoryName(post.category)}</span>
               <span>📅 ${dateStr}</span>
               <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
             </div>
             ${post.summary ? `<p style="margin-top:15px; color:var(--accent);">💡 요약: ${post.summary}</p>` : ''}
           </div>
-          <div class="post-content">${post.content}</div>
+          <div class="post-content">${parsedContent}</div>
         `;
       });
 
-      // 2. 댓글 및 답글 불러오기
+      // 2. 댓글 목록 불러오기
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -142,7 +164,6 @@
             <div>${c.content}</div>
             ${!isReply ? `<button class="btn-reply-toggle" onclick="toggleReplyForm('${key}')">↳ 답글 달기</button>` : ''}
             
-            <!-- 답글 입력 폼 -->
             <div id="replyForm-${key}" class="reply-form">
               <input type="text" id="replyAuthor-${key}" placeholder="작성자 이름" style="width:100%; margin-bottom:6px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px;">
               <textarea id="replyContent-${key}" placeholder="답글을 입력하세요..." style="width:100%; height:50px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px; margin-bottom:6px;"></textarea>
@@ -154,7 +175,7 @@
       });
     }
 
-    // 메인 댓글 제출
+    // 댓글 등록 처리
     document.getElementById("commentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const author = document.getElementById("commentAuthor").value;
@@ -170,7 +191,6 @@
       });
     });
 
-    // 답글 폼 토글 및 제출 전역 함수 등록
     window.toggleReplyForm = (commentId) => {
       const form = document.getElementById(`replyForm-${commentId}`);
       form.style.display = form.style.display === "block" ? "none" : "block";
