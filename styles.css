@@ -27,6 +27,7 @@ body {
   padding: 0 20px;
 }
 
+/* --- Header & Logo --- */
 header {
   border-bottom: 1px solid var(--border);
   padding: 40px 0;
@@ -34,10 +35,10 @@ header {
 }
 
 .logo-img {
-  max-width: 320px; /* 로고 너비를 본문 너비의 약 70~80% 수준으로 조절 (320px ~ 350px 추천) */
+  max-width: 320px; /* 로고 너비를 본문 너비의 약 70~80% 수준으로 조절 */
   height: auto;
   display: block;
-  margin: 0 auto 12px auto; /* 중앙 정렬 */
+  margin: 0 auto 12px auto;
 }
 
 .subtitle {
@@ -45,6 +46,7 @@ header {
   margin-top: 8px;
 }
 
+/* --- Main Content --- */
 main {
   padding: 40px 0;
 }
@@ -63,6 +65,7 @@ h2, h3 {
   color: var(--text-muted);
 }
 
+/* --- Category Cards Grid --- */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -74,12 +77,18 @@ h2, h3 {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 24px;
-  transition: transform 0.2s, border-color 0.2s;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--accent);
+}
+
+.card.active {
+  border-color: var(--accent);
+  background-color: rgba(56, 189, 248, 0.08);
 }
 
 .badge {
@@ -102,6 +111,24 @@ h2, h3 {
 .card p {
   font-size: 0.9rem;
   color: var(--text-muted);
+}
+
+/* --- Log List & Filter Header --- */
+.category-title-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.btn-reset-filter {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  display: none;
 }
 
 .log-list {
@@ -142,6 +169,98 @@ h2, h3 {
   color: var(--text-muted);
 }
 
+/* --- Write Button & Form Page Styles --- */
+.write-btn-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-write {
+  display: inline-block;
+  background-color: var(--accent);
+  color: #0f172a;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.btn-write:hover {
+  opacity: 0.9;
+}
+
+.write-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  height: 300px;
+  resize: vertical;
+  font-family: monospace;
+  line-height: 1.5;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.btn-submit {
+  background: var(--accent);
+  color: #0f172a;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: var(--card-bg);
+  color: var(--text-muted);
+  padding: 12px 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+}
+
+/* --- Footer --- */
 footer {
   border-top: 1px solid var(--border);
   padding: 20px 0;
