@@ -5,6 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Write Post</title>
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* 마크다운 에디터 & 미리보기 스타일 */
+    .md-toolbar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .md-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .md-btn:hover {
+      background: rgba(56, 189, 248, 0.1);
+    }
+    
+    .editor-preview-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    @media (max-width: 768px) {
+      .editor-preview-split { grid-template-columns: 1fr; }
+    }
+
+    .preview-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      height: 300px;
+      overflow-y: auto;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    /* 미리보기 내부 마크다운 요소 스타일 */
+    .preview-box h1, .preview-box h2, .preview-box h3 { color: var(--accent); margin: 12px 0 8px 0; }
+    .preview-box blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-muted); margin: 10px 0; }
+    .preview-box pre { background: #0b1120; padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; }
+    .preview-box code { background: rgba(255, 255, 255, 0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+    .preview-box pre code { background: none; padding: 0; }
+  </style>
 </head>
 <body>
   <header>
@@ -40,10 +93,30 @@
         <label for="summary">요약 (Summary)</label>
         <input type="text" id="summary" placeholder="핵심 내용 한 줄 요약">
       </div>
+      
+      <!-- 마크다운 본문 에디터 + 미리보기 영역 -->
       <div class="form-group">
-        <label for="content">본문 내용</label>
-        <textarea id="content" required placeholder="AI와의 대화 기록, 코드 스니펫 및 설명을 자유롭게 기록하세요."></textarea>
+        <label for="content">본문 내용 (Markdown 지원)</label>
+        
+        <!-- 마크다운 단축 툴바 -->
+        <div class="md-toolbar">
+          <button type="button" class="md-btn" onclick="insertMD('**', '**')">B (굵게)</button>
+          <button type="button" class="md-btn" onclick="insertMD('## ', '')">H2 (제목)</button>
+          <button type="button" class="md-btn" onclick="insertMD('```\n', '\n```')">Code (코드블록)</button>
+          <button type="button" class="md-btn" onclick="insertMD('> ', '')">Quote (인용)</button>
+          <button type="button" class="md-btn" onclick="insertMD('- ', '')">List (목록)</button>
+          <button type="button" class="md-btn" onclick="insertMD('[', '](https://)')">Link (링크)</button>
+        </div>
+
+        <div class="editor-preview-split">
+          <textarea id="content" required placeholder="AI와의 대화 기록, 마크다운 문법, 코드 등을 자유롭게 작성하세요."></textarea>
+          <div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px;">👁️ 실시간 미리보기</div>
+            <div id="preview" class="preview-box"></div>
+          </div>
+        </div>
       </div>
+
       <div class="btn-group">
         <a href="index.html" class="btn-cancel">취소</a>
         <button type="submit" class="btn-submit">저장 및 게시</button>
@@ -74,6 +147,30 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const contentTextarea = document.getElementById("content");
+    const previewDiv = document.getElementById("preview");
+
+    // 실시간 마크다운 미리보기 업데이트
+    contentTextarea.addEventListener("input", () => {
+      previewDiv.innerHTML = marked.parse(contentTextarea.value || "");
+    });
+
+    // 툴바 버튼 클릭 시 문법 자동 삽입
+    window.insertMD = (before, after) => {
+      const start = contentTextarea.selectionStart;
+      const end = contentTextarea.selectionEnd;
+      const selected = contentTextarea.value.substring(start, end);
+      const replacement = before + selected + after;
+      
+      contentTextarea.value = contentTextarea.value.substring(0, start) + replacement + contentTextarea.value.substring(end);
+      contentTextarea.focus();
+      contentTextarea.setSelectionRange(start + before.length, end + before.length);
+      
+      // 미리보기 갱신
+      previewDiv.innerHTML = marked.parse(contentTextarea.value);
+    };
+
+    // 폼 제출 (Firebase 저장)
     document.getElementById("postForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
@@ -82,7 +179,7 @@
         category: document.getElementById("category").value,
         aiModel: document.getElementById("aiModel").value,
         summary: document.getElementById("summary").value,
-        content: document.getElementById("content").value,
+        content: contentTextarea.value,
         createdAt: new Date().toISOString()
       };
 
