@@ -33,10 +33,13 @@ header {
   text-align: center;
 }
 
-.logo {
-  font-size: 2.5rem;
-  color: var(--accent);
-  letter-spacing: 2px;
+/* ✅ 로고 이미지 크기 및 중앙 정렬 추가 */
+.logo-img {
+  max-width: 250px; /* 로고 크기 (적절한 폭으로 설정) */
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px auto;
 }
 
 .subtitle {
