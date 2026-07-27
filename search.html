@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synaptry | Search Posts</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .search-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    
+    /* 검색 필터 박스 */
+    .search-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .search-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-input-wrap { flex: 1; min-width: 200px; }
+    
+    .form-control {
+      width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-main); font-size: 0.95rem; box-sizing: border-box;
+    }
+    .form-control:focus { outline: none; border-color: var(--accent); }
+
+    /* 필드 체크박스 옵션 */
+    .filter-options { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); }
+    .filter-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .filter-options input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+
+    /* 검색 결과 카드 */
+    .result-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .result-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .result-item h3 { margin: 0 0 10px 0; font-size: 1.2rem; }
+    .result-item h3 a { color: var(--text-main); text-decoration: none; }
+    .result-item h3 a:hover { color: var(--accent); }
+    .result-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 10px; }
+    .result-summary { font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+    .highlight { background: rgba(59, 130, 246, 0.3); color: #fff; padding: 0 2px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
+      <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
+    </div>
+  </header>
+
+  <main class="search-container">
+    <h2>🔍 포스트 검색</h2>
+    
+    <div class="search-box">
+      <!-- 1. 검색어 및 카테고리 -->
+      <div class="search-row">
+        <div style="width: 150px;">
+          <select id="categorySelect" class="form-control">
+            <option value="ALL">전체 카테고리</option>
+            <option value="Hardware">하드웨어</option>
+            <option value="Software">소프트웨어</option>
+            <option value="Math">수학</option>
+            <option value="Physics">물리학</option>
+            <option value="Philosophy">철학</option>
+            <option value="Etc">기타</option>
+          </select>
+        </div>
+        <div class="search-input-wrap">
+          <input type="text" id="searchInput" class="form-control" placeholder="검색어를 입력하세요..." autofocus>
+        </div>
+        <button id="searchBtn" class="btn-submit" style="padding: 10px 24px;">검색</button>
+      </div>
+
+      <!-- 2. 검색 범위 선택 (체크박스) -->
+      <div>
+        <span style="font-size: 0.85rem; color: var(--accent); font-weight: bold;">검색 대상 항목:</span>
+        <div class="filter-options">
+          <label><input type="checkbox" id="chkTitle" checked> 제목</label>
+          <label><input type="checkbox" id="chkContent" checked> 본문</label>
+          <label><input type="checkbox" id="chkSummary" checked> 요약</label>
+          <label><input type="checkbox" id="chkAuthor"> 작성자</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 검색 결과 출력 영역 -->
+    <div id="resultsCount" style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;"></div>
+    <div id="searchResults">
+      <p style="color: var(--text-muted); text-align: center;">검색어를 입력하고 검색 버튼을 눌러주세요.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
+      authDomain: "synaptry-db.firebaseapp.com",
+      databaseURL: "https://synaptry-db-default-rtdb.firebaseio.com",
+      projectId: "synaptry-db",
+      storageBucket: "synaptry-db.firebasestorage.app",
+      messagingSenderId: "980184606882",
+      appId: "1:980184606882:web:c5302bdf71b63e37db4ffb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const searchInput = document.getElementById("searchInput");
+    const categorySelect = document.getElementById("categorySelect");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchResults = document.getElementById("searchResults");
+    const resultsCount = document.getElementById("resultsCount");
+
+    function getCategoryName(cat) {
+      const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
+      return names[cat] || cat;
+    }
+
+    // 검색 실행 함수
+    async function performSearch() {
+      const keyword = searchInput.value.trim().toLowerCase();
+      const selectedCat = categorySelect.value;
+
+      const inTitle = document.getElementById("chkTitle").checked;
+      const inContent = document.getElementById("chkContent").checked;
+      const inSummary = document.getElementById("chkSummary").checked;
+      const inAuthor = document.getElementById("chkAuthor").checked;
+
+      if (!keyword) {
+        alert("검색어를 입력해주세요.");
+        return;
+      }
+
+      if (!inTitle && !inContent && !inSummary && !inAuthor) {
+        alert("최소 하나 이상의 검색 대상 항목을 선택해야 합니다.");
+        return;
+      }
+
+      searchResults.innerHTML = `<p style="color: var(--text-muted); text-align: center;">검색 중입니다...</p>`;
+
+      try {
+        const postsRef = ref(db, "posts");
+        const snapshot = await get(postsRef);
+
+        if (!snapshot.exists()) {
+          searchResults.innerHTML = `<p style="color: var(--text-muted); text-align: center;">등록된 포스트가 없습니다.</p>`;
+          resultsCount.innerText = "";
+          return;
+        }
+
+        const postsData = snapshot.val();
+        const matchedPosts = [];
+
+        Object.keys(postsData).forEach((id) => {
+          const post = postsData[id];
+          post.id = id;
+
+          // 1. 카테고리 필터링
+          if (selectedCat !== "ALL" && post.category !== selectedCat) {
+            return;
+          }
+
+          // 2. 항목별 검색 조건 매칭
+          let isMatched = false;
+          if (inTitle && post.title && post.title.toLowerCase().includes(keyword)) isMatched = true;
+          if (inContent && post.content && post.content.toLowerCase().includes(keyword)) isMatched = true;
+          if (inSummary && post.summary && post.summary.toLowerCase().includes(keyword)) isMatched = true;
+          if (inAuthor && post.author && post.author.toLowerCase().includes(keyword)) isMatched = true;
+
+          if (isMatched) {
+            matchedPosts.push(post);
+          }
+        });
+
+        // 최신순 정렬
+        matchedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // 결과 출력
+        resultsCount.innerText = `총 ${matchedPosts.length}개의 포스트를 찾았습니다.`;
+
+        if (matchedPosts.length === 0) {
+          searchResults.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px 0;">검색 결과가 없습니다.</p>`;
+          return;
+        }
+
+        searchResults.innerHTML = matchedPosts.map((post) => {
+          const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+          const displaySummary = post.summary || (post.content ? post.content.substring(0, 120) + "..." : "");
+
+          return `
+            <div class="result-item">
+              <h3><a href="post.html?id=${post.id}">${post.title}</a></h3>
+              <div class="result-meta">
+                <span>👤 ${post.author || '익명'}</span>
+                <span>🏷️ ${getCategoryName(post.category)}</span>
+                <span>📅 ${dateStr}</span>
+                <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+              </div>
+              <p class="result-summary">${displaySummary}</p>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error(error);
+        searchResults.innerHTML = `<p style="color: #ef4444; text-align: center;">검색 중 오류가 발생했습니다.</p>`;
+      }
+    }
+
+    // 이벤트 리스너 등록
+    searchBtn.addEventListener("click", performSearch);
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") performSearch();
+    });
+  </script>
+</body>
+</html>
