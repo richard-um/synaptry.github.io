@@ -23,6 +23,7 @@
       border-radius: 4px;
       font-size: 0.85rem;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
     .btn-delete-post:hover {
       background: #ef4444;
@@ -38,6 +39,9 @@
     .post-content pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; margin: 16px 0; }
     .post-content code { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
     .post-content pre code { background: none; padding: 0; }
+    .post-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .post-content th, .post-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    .post-content th { background: var(--card-bg); color: var(--accent); }
     .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
 
     /* 댓글 스타일 */
@@ -96,7 +100,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
@@ -110,6 +114,16 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+
+    const ADMIN_HASH = "15934522fb09ee2ca49377be8dd8b9dd53805fbe60f3dd90547ddb8d6be6d5b0";
+
+    // 비밀번호 해시 변환 함수
+    async function hashPassword(message) {
+      const msgUint8 = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
@@ -153,17 +167,25 @@
           <div class="post-content">${parsedContent}</div>
         `;
 
-        // 삭제 버튼 이벤트 바인딩
-        document.getElementById("deletePostBtn").addEventListener("click", () => {
-          const inputPw = prompt("포스트를 삭제하려면 작성 시 설정한 비밀번호를 입력하세요:");
+        // 삭제 처리 로직 (작성자 비밀번호 OR 관리자 해시값 비교)
+        document.getElementById("deletePostBtn").addEventListener("click", async () => {
+          const inputPw = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
           if (inputPw === null) return;
 
-          if (inputPw === post.password) {
-            if (confirm("정말로 이 포스트를 삭제하시겠습니까?")) {
-              // 포스트 및 관련 댓글 삭제
+          const inputHash = await hashPassword(inputPw);
+
+          const isAuthorPasswordMatch = post.password && inputPw === post.password;
+          const isAdminPasswordMatch = inputHash === ADMIN_HASH;
+
+          if (isAuthorPasswordMatch || isAdminPasswordMatch) {
+            const confirmMsg = isAdminPasswordMatch 
+              ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
+              : "정말로 이 포스트를 삭제하시겠습니까?";
+
+            if (confirm(confirmMsg)) {
               remove(ref(db, `posts/${postId}`));
               remove(ref(db, `comments/${postId}`));
-              alert("포스트가 삭제되었습니다.");
+              alert("포스트가 성공적으로 삭제되었습니다.");
               window.location.href = "index.html";
             }
           } else {
