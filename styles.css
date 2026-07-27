@@ -33,13 +33,11 @@ header {
   text-align: center;
 }
 
-/* ✅ 로고 이미지 크기 및 중앙 정렬 추가 */
 .logo-img {
-  max-width: 250px; /* 로고 크기 (적절한 폭으로 설정) */
-  width: 100%;
+  max-width: 320px; /* 로고 너비를 본문 너비의 약 70~80% 수준으로 조절 (320px ~ 350px 추천) */
   height: auto;
   display: block;
-  margin: 0 auto 12px auto;
+  margin: 0 auto 12px auto; /* 중앙 정렬 */
 }
 
 .subtitle {
