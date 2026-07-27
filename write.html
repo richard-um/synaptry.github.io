@@ -11,7 +11,7 @@
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--accent); }
     .form-control { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 1rem; box-sizing: border-box; }
     .form-control:focus { outline: none; border-color: var(--accent); }
-    textarea.form-control { height: 350px; resize: vertical; font-family: monospace; line-height: 1.5; }
+    textarea.form-control { resize: vertical; font-family: inherit; line-height: 1.5; }
     .form-row { display: flex; gap: 20px; }
     .form-row .form-group { flex: 1; }
     .btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
@@ -65,14 +65,15 @@
         </div>
       </div>
 
+      <!-- 한줄 요약 -> 시작 프롬프트 (3줄 분량 textarea) -->
       <div class="form-group">
-        <label for="summary">한 줄 요약 (선택)</label>
-        <input type="text" id="summary" class="form-control" placeholder="포스트의 핵심 내용을 한 문장으로 요약해 주세요">
+        <label for="summary">시작 프롬프트 (선택)</label>
+        <textarea id="summary" class="form-control" style="height: 90px;" placeholder="AI와의 대화를 시작했던 초기 프롬프트나 맥락을 3줄 정도로 작성해 주세요"></textarea>
       </div>
 
       <div class="form-group">
         <label for="content">본문 내용 (마크다운 지원)</label>
-        <textarea id="content" class="form-control" required placeholder="마크다운 문법을 사용하여 자유롭게 작성하세요..."></textarea>
+        <textarea id="content" class="form-control" style="height: 350px; font-family: monospace;" required placeholder="마크다운 문법을 사용하여 자유롭게 작성하세요..."></textarea>
       </div>
 
       <div class="btn-group">
@@ -101,7 +102,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 폼 입력 데이터 객체 획득 함수
     function getFormData() {
       return {
         title: document.getElementById("title").value,
@@ -114,7 +114,6 @@
       };
     }
 
-    // 기존 복원 데이터 복구
     window.addEventListener("DOMContentLoaded", () => {
       const savedData = sessionStorage.getItem("draftPost");
       if (savedData) {
@@ -129,23 +128,20 @@
       }
     });
 
-    // 미리보기 버튼 클릭 시 임시 저장 후 preview.html 로 이동
     document.getElementById("previewBtn").addEventListener("click", () => {
       const formData = getFormData();
       sessionStorage.setItem("draftPost", JSON.stringify(formData));
       window.location.href = "preview.html";
     });
 
-    // 포스트 최종 등록
     document.getElementById("writeForm").addEventListener("submit", (e) => {
       e.preventDefault();
-
       const formData = getFormData();
       formData.createdAt = new Date().toISOString();
 
       push(ref(db, "posts"), formData)
         .then(() => {
-          sessionStorage.removeItem("draftPost"); // 등록 성공 시 임시 저장 데이터 삭제
+          sessionStorage.removeItem("draftPost");
           alert("포스트가 성공적으로 발행되었습니다!");
           window.location.href = "index.html";
         })
