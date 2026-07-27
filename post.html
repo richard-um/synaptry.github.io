@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Post Detail</title>
   <link rel="stylesheet" href="styles.css">
-  
-  <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -25,12 +23,9 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .btn-delete-post:hover {
-      background: #ef4444;
-      color: #ffffff;
-    }
+    .btn-delete-post:hover { background: #ef4444; color: #ffffff; }
 
-    /* 요약(Summary) 스타일 */
+    /* 시작 프롬프트 박스 */
     .post-summary-box {
       margin-top: 20px;
       padding: 16px 20px;
@@ -38,34 +33,10 @@
       border-left: 4px solid var(--accent);
       border-radius: 6px;
     }
-    .post-summary-box strong {
-      color: var(--accent);
-      display: block;
-      margin-bottom: 6px;
-      font-size: 0.95rem;
-    }
-    .post-summary-box p {
-      margin: 0;
-      color: var(--text-main);
-      font-size: 1rem;
-      line-height: 1.6;
-    }
+    .post-summary-box strong { color: var(--accent); display: block; margin-bottom: 6px; font-size: 0.95rem; }
+    .post-summary-box p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
 
-    /* 마크다운 스타일 */
     .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
-    .post-content h1, .post-content h2, .post-content h3 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
-    .post-content p { margin-bottom: 16px; }
-    .post-content ul, .post-content ol { padding-left: 20px; margin-bottom: 16px; }
-    .post-content blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--text-muted); margin: 16px 0; }
-    .post-content pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; margin: 16px 0; }
-    .post-content code { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-    .post-content pre code { background: none; padding: 0; }
-    .post-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    .post-content th, .post-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
-    .post-content th { background: var(--card-bg); color: var(--accent); }
-    .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
-
-    /* 댓글 스타일 */
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
     .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
     .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
@@ -94,7 +65,6 @@
       <p style="color: var(--text-muted);">포스트를 불러오는 중입니다...</p>
     </div>
 
-    <!-- 댓글 섹션 -->
     <section class="comments-section">
       <h3>💬 댓글 및 토론</h3>
       <div id="commentsList" style="margin-top: 20px;">
@@ -136,9 +106,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 관리자 마스터 비밀번호 ("djatldms2@")
     const ADMIN_PASSWORD = "djatldms2@";
-
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 
@@ -153,7 +121,6 @@
     if (!postId) {
       postArea.innerHTML = "<h2>잘못된 접근입니다.</h2>";
     } else {
-      // 1. 포스트 데이터 로드
       onValue(ref(db, `posts/${postId}`), (snapshot) => {
         const post = snapshot.val();
         if (!post) {
@@ -177,28 +144,24 @@
               <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
             </div>
             
-            <!-- write.html에서 입력한 요약(Summary) 본문 전에 표시 -->
             ${post.summary ? `
               <div class="post-summary-box">
-                <strong>💡 요약</strong>
+                <strong>💬 시작 프롬프트</strong>
                 <p>${post.summary}</p>
               </div>
             ` : ''}
           </div>
           
-          <!-- 본문 영역 -->
           <div class="post-content">${parsedContent}</div>
         `;
 
-        // 삭제 버튼 이벤트
         document.getElementById("deletePostBtn").addEventListener("click", () => {
           const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
           if (rawInput === null) return;
 
-          const inputPw = rawInput.trim(); // 공백 제거
-
+          const inputPw = rawInput.trim();
           const isAuthorMatch = post.password && inputPw === post.password;
-          const isAdminMatch = inputPw === ADMIN_PASSWORD; // "djatldms2@" 검증
+          const isAdminMatch = inputPw === ADMIN_PASSWORD;
 
           if (isAuthorMatch || isAdminMatch) {
             const confirmMsg = isAdminMatch 
@@ -217,7 +180,6 @@
         });
       });
 
-      // 2. 댓글 로드
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -253,7 +215,6 @@
       });
     }
 
-    // 댓글 작성
     document.getElementById("commentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const author = document.getElementById("commentAuthor").value;
