@@ -5,42 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Write Post</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .write-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--accent); }
-    .form-control { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 1rem; box-sizing: border-box; }
-    .form-control:focus { outline: none; border-color: var(--accent); }
-    textarea.form-control { resize: vertical; font-family: inherit; line-height: 1.5; }
-    
-    /* 리치 텍스트 에디터 영역 (contenteditable) */
-    .editor-control {
-      width: 100%;
-      min-height: 350px;
-      padding: 16px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-main);
-      font-size: 1rem;
-      line-height: 1.6;
-      box-sizing: border-box;
-      overflow-y: auto;
-      outline: none;
-    }
-    .editor-control:focus { border-color: var(--accent); }
-    .editor-control[placeholder]:empty:before {
-      content: attr(placeholder);
-      color: var(--text-muted);
-      cursor: text;
-    }
-
-    .form-row { display: flex; gap: 20px; }
-    .form-row .form-group { flex: 1; }
-    .btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
-    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-    .btn-secondary:hover { border-color: var(--text-main); color: var(--text-main); }
-  </style>
 </head>
 <body>
   <header>
@@ -51,22 +15,19 @@
   </header>
 
   <main class="write-container">
-    <h2>✍️ 새 포스트 작성</h2>
-    <form id="writeForm" style="margin-top: 20px;">
-      
+    <h2 style="margin-bottom: 24px; color: var(--accent);">새 대화 기록 작성</h2>
+    
+    <form id="writeForm" autocomplete="off">
       <div class="form-group">
-        <label for="title">제목</label>
-        <input type="text" id="title" class="form-control" required placeholder="포스트 제목을 입력하세요">
+        <label for="postTitle">포스트 제목</label>
+        <input type="text" id="postTitle" class="form-control" placeholder="제목을 입력하세요..." required autocomplete="off">
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="author">작성자</label>
-          <input type="text" id="author" class="form-control" placeholder="이름 또는 닉네임" required>
-        </div>
-        <div class="form-group">
-          <label for="category">카테고리</label>
-          <select id="category" class="form-control" required>
+          <label for="postCategory">카테고리</label>
+          <select id="postCategory" class="form-control" required>
+            <option value="" disabled selected>선택하세요</option>
             <option value="Hardware">하드웨어</option>
             <option value="Software">소프트웨어</option>
             <option value="Math">수학</option>
@@ -75,38 +36,47 @@
             <option value="Etc">기타</option>
           </select>
         </div>
+
+        <div class="form-group">
+          <label for="aiModel">사용한 AI 모델</label>
+          <input type="text" id="aiModel" class="form-control" placeholder="예: Gemini 1.5 Pro, ChatGPT 4o" autocomplete="off">
+        </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="aiModel">사용한 AI 모델</label>
-          <input type="text" id="aiModel" class="form-control" placeholder="예: Claude 3.5 Sonnet, ChatGPT-4o">
+          <label for="authorName">작성자 이름</label>
+          <input type="text" id="authorName" class="form-control" placeholder="이름 또는 닉네임" required autocomplete="off">
         </div>
+
         <div class="form-group">
-          <label for="password">삭제 비밀번호</label>
-          <input type="password" id="password" class="form-control" placeholder="포스트 삭제 시 필요" required>
+          <label for="postPassword">삭제 비밀번호</label>
+          <input type="password" id="postPassword" class="form-control" placeholder="글 삭제 시 사용할 비밀번호" required autocomplete="new-password">
         </div>
       </div>
 
       <div class="form-group">
-        <label for="summary">시작 프롬프트 (선택)</label>
-        <textarea id="summary" class="form-control" style="height: 90px;" placeholder="AI와의 대화를 시작했던 초기 프롬프트나 맥락을 작성해 주세요"></textarea>
+        <label for="postSummary">시작 프롬프트 / 대화 요약</label>
+        <textarea id="postSummary" class="form-control" rows="3" placeholder="AI에게 처음 던진 질문이나 전체 대화의 요약을 적어주세요..." autocomplete="off"></textarea>
       </div>
 
       <div class="form-group">
-        <label for="content">본문 내용 (Gemini 대화 복사/붙여넣기 지원)</label>
-        <!-- HTML 서식을 그대로 지원하는 에디터 입력창 -->
-        <div id="content" class="editor-control" contenteditable="true" placeholder="Gemini 대화 내용을 복사해서 여기에 붙여넣으세요..."></div>
+        <label>대화 본문 (Gemini 복사-붙여넣기 가능)</label>
+        <div id="postContent" class="editor-control" contenteditable="true" placeholder="Gemini와의 대화 내용을 복사해서 그대로 붙여넣으세요..."></div>
       </div>
 
       <div class="btn-group">
         <button type="button" class="btn-submit btn-secondary" onclick="history.back()">취소</button>
-        <button type="button" id="previewBtn" class="btn-submit btn-secondary">👁️ 미리보기</button>
-        <button type="submit" class="btn-submit">🚀 발행하기</button>
+        <button type="submit" class="btn-submit">발행하기</button>
       </div>
-
     </form>
   </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
+    </div>
+  </footer>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -125,59 +95,57 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const contentEditor = document.getElementById("content");
+    const writeForm = document.getElementById("writeForm");
+    const postContent = document.getElementById("postContent");
 
-    function getFormData() {
-      return {
-        title: document.getElementById("title").value,
-        author: document.getElementById("author").value,
-        category: document.getElementById("category").value,
-        aiModel: document.getElementById("aiModel").value,
-        password: document.getElementById("password").value,
-        summary: document.getElementById("summary").value,
-        content: contentEditor.innerHTML // 서식 및 HTML 전체 저장
-      };
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const savedData = sessionStorage.getItem("draftPost");
-      if (savedData) {
-        const draft = JSON.parse(savedData);
-        document.getElementById("title").value = draft.title || "";
-        document.getElementById("author").value = draft.author || "";
-        document.getElementById("category").value = draft.category || "Hardware";
-        document.getElementById("aiModel").value = draft.aiModel || "";
-        document.getElementById("password").value = draft.password || "";
-        document.getElementById("summary").value = draft.summary || "";
-        contentEditor.innerHTML = draft.content || "";
-      }
+    // 페이지 진입 또는 뒤로 가기/앞으로 가기로 접근할 때 입력 폼 강제 리셋 (잔상 방지)
+    window.addEventListener("pageshow", () => {
+      if (writeForm) writeForm.reset();
+      if (postContent) postContent.innerHTML = "";
     });
 
-    document.getElementById("previewBtn").addEventListener("click", () => {
-      const formData = getFormData();
-      sessionStorage.setItem("draftPost", JSON.stringify(formData));
-      window.location.href = "preview.html";
-    });
-
-    document.getElementById("writeForm").addEventListener("submit", (e) => {
+    writeForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const formData = getFormData();
 
-      if (!formData.content || formData.content.trim() === "") {
-        alert("본문 내용을 입력해주세요.");
+      const title = document.getElementById("postTitle").value.trim();
+      const category = document.getElementById("postCategory").value;
+      const aiModel = document.getElementById("aiModel").value.trim() || "Gemini 1.5 Pro";
+      const author = document.getElementById("authorName").value.trim() || "익명";
+      const password = document.getElementById("postPassword").value.trim();
+      const summary = document.getElementById("postSummary").value.trim();
+      const content = postContent.innerHTML.trim();
+
+      if (!title || !category || !password) {
+        alert("필수 항목(제목, 카테고리, 비밀번호)을 입력해 주세요.");
         return;
       }
 
-      formData.createdAt = new Date().toISOString();
+      if (!content || content === "<br>") {
+        alert("본문 내용을 입력해 주세요.");
+        return;
+      }
 
-      push(ref(db, "posts"), formData)
+      const newPost = {
+        title: title,
+        category: category,
+        aiModel: aiModel,
+        author: author,
+        password: password,
+        summary: summary,
+        content: content,
+        createdAt: new Date().toISOString()
+      };
+
+      push(ref(db, "posts"), newPost)
         .then(() => {
-          sessionStorage.removeItem("draftPost");
-          alert("포스트가 성공적으로 발행되었습니다!");
+          alert("글이 성공적으로 발행되었습니다!");
+          writeForm.reset();
+          postContent.innerHTML = "";
           window.location.href = "index.html";
         })
         .catch((error) => {
-          alert("발행 실패: " + error.message);
+          console.error("저장 오류:", error);
+          alert("글 저장 중 오류가 발생했습니다.");
         });
     });
   </script>
