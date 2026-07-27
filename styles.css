@@ -35,37 +35,49 @@ header {
 }
 
 .logo-img {
-  max-width: 320px; /* 로고 너비를 본문 너비의 약 70~80% 수준으로 조절 */
+  max-width: 320px;
+  width: 100%;
   height: auto;
-  display: block;
-  margin: 0 auto 12px auto;
+  margin-bottom: 12px;
+  display: inline-block;
 }
 
 .subtitle {
   color: var(--text-muted);
-  margin-top: 8px;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
 }
 
-/* --- Main Content --- */
-main {
-  padding: 40px 0;
+/* --- Intro Section --- */
+.intro {
+  margin: 40px 0;
+  text-align: center;
 }
 
-section {
-  margin-bottom: 50px;
-}
-
-h2, h3 {
-  margin-bottom: 20px;
+.intro h2 {
+  font-size: 1.8rem;
+  margin-bottom: 12px;
   color: var(--accent);
 }
 
 .intro p {
-  font-size: 1.1rem;
   color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-/* --- Category Cards Grid --- */
+/* --- Grid & Category Cards --- */
+.categories {
+  margin-bottom: 40px;
+}
+
+.categories h3 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -73,34 +85,18 @@ h2, h3 {
 }
 
 .card {
-  background-color: var(--card-bg);
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  position: relative;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--accent);
-}
-
-.card.active {
-  border-color: var(--accent);
-  background-color: rgba(56, 189, 248, 0.08);
-}
-
-.badge {
-  display: inline-block;
-  font-size: 0.75rem;
-  background: rgba(56, 189, 248, 0.1);
-  color: var(--accent);
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  font-weight: bold;
 }
 
 .card h4 {
@@ -109,162 +105,345 @@ h2, h3 {
 }
 
 .card p {
+  color: var(--text-muted);
   font-size: 0.9rem;
-  color: var(--text-muted);
 }
 
-/* --- Log List & Filter Header --- */
-.category-title-wrap {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
 }
 
-.btn-reset-filter {
+/* --- Post Detail Page --- */
+.post-detail-container { 
+  max-width: 800px; 
+  margin: 40px auto; 
+  padding: 0 20px; 
+}
+
+.post-header { 
+  border-bottom: 1px solid var(--border); 
+  padding-bottom: 20px; 
+  margin-bottom: 30px; 
+}
+
+.post-meta-wrap { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  flex-wrap: wrap; 
+  margin-top: 10px; 
+  gap: 10px; 
+}
+
+.post-meta { 
+  display: flex; 
+  gap: 15px; 
+  color: var(--text-muted); 
+  font-size: 0.9rem; 
+  flex-wrap: wrap; 
+}
+
+.action-btn-group { 
+  display: flex; 
+  gap: 8px; 
+}
+
+.btn-flow-toggle {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #10b981;
+  padding: 5px 12px;
+  border-radius: 4px;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  font-weight: bold;
   cursor: pointer;
-  background: none;
-  border: none;
-  text-decoration: underline;
+  transition: all 0.2s ease;
+}
+.btn-flow-toggle:hover { 
+  background: #10b981; 
+  color: #ffffff; 
+}
+
+.btn-delete-post {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-delete-post:hover { 
+  background: #ef4444; 
+  color: #ffffff; 
+}
+
+.post-summary-box {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+}
+.post-summary-box strong { 
+  color: var(--accent); 
+  display: block; 
+  margin-bottom: 6px; 
+  font-size: 0.95rem; 
+}
+.post-summary-box p { 
+  margin: 0; 
+  color: var(--text-main); 
+  font-size: 0.95rem; 
+  line-height: 1.6; 
+  white-space: pre-line; 
+}
+
+/* --- Gemini 대화 및 Rich Text 본문 스타일 보정 (첫 줄 잘림 방지) --- */
+.post-content { 
+  line-height: 1.8; 
+  font-size: 1.05rem; 
+  margin-bottom: 50px; 
+  width: 100%;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* 외부 복사 태그들의 높이/스크롤 제한 강제 해제 */
+.post-content * {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.post-content p { 
+  margin-bottom: 1em; 
+}
+
+.post-content pre, 
+.post-content code, 
+.post-content table { 
+  max-width: 100%; 
+  overflow-x: auto !important; 
+}
+
+/* --- Flow Diagram Container & Git Graph --- */
+.flow-diagram-container {
   display: none;
+  margin: 25px 0;
+  padding: 20px;
+  background: #0f172a;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease;
+}
+.flow-diagram-container.active { 
+  display: block !important; 
+}
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(-8px); } 
+  to { opacity: 1; transform: translateY(0); } 
 }
 
-.log-list {
-  list-style: none;
+.flow-title { 
+  font-size: 1.1rem; 
+  color: var(--accent); 
+  margin-bottom: 15px; 
+  font-weight: bold; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
 }
 
-.log-item {
+.git-graph { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 14px; 
+  position: relative; 
+  padding-left: 10px; 
+}
+.git-graph::before {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 15px;
+  bottom: 15px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 1;
+}
+
+.git-node {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 16px;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  padding: 8px 12px;
   border-radius: 6px;
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.git-node:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+.git-node.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent);
 }
 
-.log-item .tag {
-  font-size: 0.8rem;
-  background: var(--border);
+.git-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #0f172a;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  flex-shrink: 0;
+}
+.git-node.branch-main .git-dot { background: #3b82f6; }
+.git-node.branch-feature .git-dot { background: #10b981; }
+
+.git-branch-tag {
+  font-size: 0.75rem;
   padding: 2px 8px;
-  border-radius: 4px;
-  color: var(--text-main);
-}
-
-.log-item a {
-  color: var(--text-main);
-  text-decoration: none;
-  flex: 1;
-}
-
-.log-item a:hover {
-  color: var(--accent);
-}
-
-.log-item .date {
-  font-size: 0.85rem;
+  border-radius: 12px;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-muted);
 }
+.git-node.branch-main .git-branch-tag { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.git-node.branch-feature .git-branch-tag { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 
-/* --- Write Button & Form Page Styles --- */
-.write-btn-container {
-  display: flex;
-  justify-content: flex-end;
+.git-node-label { 
+  font-size: 0.95rem; 
+  font-weight: 600; 
+  color: var(--text-main); 
+}
+
+.flow-preview-card {
   margin-top: 20px;
-}
-
-.btn-write {
-  display: inline-block;
-  background-color: var(--accent);
-  color: #0f172a;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
-
-.btn-write:hover {
-  opacity: 0.9;
-}
-
-.write-container {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 0 20px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--accent);
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
+  padding: 16px 20px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: var(--text-main);
-  font-size: 1rem;
-  box-sizing: border-box;
+  display: none;
+}
+.flow-preview-card h4 { 
+  margin: 0 0 8px 0; 
+  color: var(--accent); 
+  font-size: 1.05rem; 
+}
+.flow-preview-card p { 
+  margin: 0; 
+  color: var(--text-main); 
+  font-size: 0.95rem; 
+  line-height: 1.6; 
+  white-space: pre-line; 
 }
 
-.form-group textarea {
-  height: 300px;
-  resize: vertical;
-  font-family: monospace;
-  line-height: 1.5;
+/* --- Comments Section --- */
+.comments-section { 
+  border-top: 1px solid var(--border); 
+  padding-top: 30px; 
 }
 
-.btn-group {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 30px;
+.comment-card { 
+  background: var(--card-bg); 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  padding: 15px; 
+  margin-bottom: 12px; 
+}
+.comment-card.reply { 
+  margin-left: 30px; 
+  border-left: 3px solid var(--accent); 
 }
 
+.comment-meta { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 0.85rem; 
+  color: var(--text-muted); 
+  margin-bottom: 8px; 
+}
+.comment-author { 
+  font-weight: bold; 
+  color: var(--accent); 
+}
+
+.btn-reply-toggle { 
+  background: none; 
+  border: none; 
+  color: var(--accent); 
+  font-size: 0.8rem; 
+  cursor: pointer; 
+  text-decoration: underline; 
+  padding: 0; 
+  margin-top: 8px; 
+}
+
+.comment-form { 
+  margin-top: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+.comment-form input, 
+.comment-form textarea {
+  background: var(--card-bg); 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  color: var(--text-main); 
+  padding: 10px;
+}
+.comment-form textarea { 
+  height: 80px; 
+  resize: vertical; 
+}
+
+.reply-form { 
+  margin-top: 10px; 
+  padding: 10px; 
+  background: rgba(255, 255, 255, 0.02); 
+  border-radius: 6px; 
+  display: none; 
+}
+
+/* --- Common Buttons --- */
 .btn-submit {
   background: var(--accent);
-  color: #0f172a;
-  padding: 12px 28px;
+  color: #000;
   border: none;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 4px;
   font-weight: bold;
-  font-size: 1rem;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
-
-.btn-cancel {
-  background: var(--card-bg);
-  color: var(--text-muted);
-  padding: 12px 20px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 1rem;
-}
-
 .btn-submit:hover {
-  opacity: 0.9;
+  background: var(--accent-hover);
+  color: #fff;
 }
 
 /* --- Footer --- */
 footer {
   border-top: 1px solid var(--border);
-  padding: 20px 0;
+  padding: 30px 0;
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  margin-top: 60px;
 }
