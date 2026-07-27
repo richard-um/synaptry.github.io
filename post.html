@@ -12,9 +12,24 @@
   <style>
     .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
     .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
-    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
+    .post-meta-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
     
-    /* 마크다운 스타일링 (코드 블록, 인용구 등) */
+    .btn-delete-post {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-delete-post:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    /* 마크다운 스타일 */
     .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
     .post-content h1, .post-content h2, .post-content h3 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
     .post-content p { margin-bottom: 16px; }
@@ -25,7 +40,7 @@
     .post-content pre code { background: none; padding: 0; }
     .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
 
-    /* 댓글 영역 스타일 */
+    /* 댓글 스타일 */
     .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
     .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
     .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
@@ -33,7 +48,6 @@
     .comment-author { font-weight: bold; color: var(--accent); }
     .btn-reply-toggle { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; }
     
-    /* 댓글 폼 */
     .comment-form { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
     .comment-form input, .comment-form textarea {
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); padding: 10px;
@@ -62,7 +76,6 @@
         <p style="color: var(--text-muted); font-size: 0.9rem;">작성된 댓글이 없습니다.</p>
       </div>
 
-      <!-- 새 댓글 작성 폼 -->
       <form id="commentForm" class="comment-form">
         <h4>댓글 남기기</h4>
         <div style="display: flex; gap: 10px;">
@@ -83,7 +96,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
@@ -112,34 +125,54 @@
     if (!postId) {
       postArea.innerHTML = "<h2>잘못된 접근입니다.</h2>";
     } else {
-      // 1. 포스트 본문 파싱 및 마크다운 변환
+      // 1. 포스트 데이터 로드
       onValue(ref(db, `posts/${postId}`), (snapshot) => {
         const post = snapshot.val();
         if (!post) {
-          postArea.innerHTML = "<h2>포스트를 찾을 수 없습니다.</h2>";
+          postArea.innerHTML = "<h2>삭제되었거나 존재하지 않는 포스트입니다.</h2>";
           return;
         }
 
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
-        
-        // Marked.js를 이용해 마크다운을 HTML로 파싱
         const parsedContent = marked.parse(post.content || "");
 
         postArea.innerHTML = `
           <div class="post-header">
             <h2>${post.title}</h2>
-            <div class="post-meta">
-              <span>🏷️ ${getCategoryName(post.category)}</span>
-              <span>📅 ${dateStr}</span>
-              <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+            <div class="post-meta-wrap">
+              <div class="post-meta">
+                <span>👤 ${post.author || '익명'}</span>
+                <span>🏷️ ${getCategoryName(post.category)}</span>
+                <span>📅 ${dateStr}</span>
+                <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+              </div>
+              <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
             </div>
             ${post.summary ? `<p style="margin-top:15px; color:var(--accent);">💡 요약: ${post.summary}</p>` : ''}
           </div>
           <div class="post-content">${parsedContent}</div>
         `;
+
+        // 삭제 버튼 이벤트 바인딩
+        document.getElementById("deletePostBtn").addEventListener("click", () => {
+          const inputPw = prompt("포스트를 삭제하려면 작성 시 설정한 비밀번호를 입력하세요:");
+          if (inputPw === null) return;
+
+          if (inputPw === post.password) {
+            if (confirm("정말로 이 포스트를 삭제하시겠습니까?")) {
+              // 포스트 및 관련 댓글 삭제
+              remove(ref(db, `posts/${postId}`));
+              remove(ref(db, `comments/${postId}`));
+              alert("포스트가 삭제되었습니다.");
+              window.location.href = "index.html";
+            }
+          } else {
+            alert("비밀번호가 일치하지 않습니다.");
+          }
+        });
       });
 
-      // 2. 댓글 목록 불러오기
+      // 2. 댓글 및 답글 로드
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -175,7 +208,7 @@
       });
     }
 
-    // 댓글 등록 처리
+    // 댓글 등록
     document.getElementById("commentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const author = document.getElementById("commentAuthor").value;
