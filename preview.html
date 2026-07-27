@@ -3,30 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Synaptry | Post Preview</title>
+  <title>Synaptry | Preview Post</title>
   <link rel="stylesheet" href="styles.css">
   
   <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
-    .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    .preview-badge {
-      display: inline-block;
-      background: #f59e0b;
-      color: #000;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      margin-bottom: 10px;
+    .preview-bar {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--accent);
+      padding: 12px 20px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    .preview-bar p { margin: 0; color: var(--accent); font-weight: bold; }
+    .preview-btn-group { display: flex; gap: 10px; }
+    
+    .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
     .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
     .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
-    
+
     /* 마크다운 스타일 */
     .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
-    .post-content h1, .post-content h2, .post-content h3, .post-content h4 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
+    .post-content h1, .post-content h2, .post-content h3 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
     .post-content p { margin-bottom: 16px; }
     .post-content ul, .post-content ol { padding-left: 20px; margin-bottom: 16px; }
     .post-content blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--text-muted); margin: 16px 0; }
@@ -48,50 +51,92 @@
   </header>
 
   <main class="post-detail-container">
-    <span class="preview-badge">👁️ 미리보기 모드 (저장되지 않은 상태입니다)</span>
+    <!-- 미리보기 안내 및 조작 바 -->
+    <div class="preview-bar">
+      <p>👁️ 미리보기 화면입니다. (아직 발행되지 않음)</p>
+      <div class="preview-btn-group">
+        <button id="editBtn" class="btn-submit" style="background: transparent; border: 1px solid var(--border); color: var(--text-main);">✏️ 계속 수정하기</button>
+        <button id="publishBtn" class="btn-submit">🚀 이대로 발행하기</button>
+      </div>
+    </div>
+
     <div id="postArea">
       <p style="color: var(--text-muted);">미리보기를 불러오는 중입니다...</p>
     </div>
   </main>
 
-  <footer>
-    <div class="container">
-      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
-    </div>
-  </footer>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const previewData = JSON.parse(sessionStorage.getItem("synaptry_preview_data") || "{}");
-      const postArea = document.getElementById("postArea");
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
+      authDomain: "synaptry-db.firebaseapp.com",
+      databaseURL: "https://synaptry-db-default-rtdb.firebaseio.com",
+      projectId: "synaptry-db",
+      storageBucket: "synaptry-db.firebasestorage.app",
+      messagingSenderId: "980184606882",
+      appId: "1:980184606882:web:c5302bdf71b63e37db4ffb"
+    };
 
-      if (!previewData.content && !previewData.title) {
-        postArea.innerHTML = "<h2>미리볼 데이터가 없습니다.</h2>";
-        return;
-      }
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-      function getCategoryName(cat) {
-        const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
-        return names[cat] || cat;
-      }
+    const postArea = document.getElementById("postArea");
+    const savedData = sessionStorage.getItem("draftPost");
 
-      const parsedContent = marked.parse(previewData.content || "");
-      const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, ".");
+    function getCategoryName(cat) {
+      const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
+      return names[cat] || cat;
+    }
+
+    if (!savedData) {
+      postArea.innerHTML = "<h2>작성 중인 포스트 데이터가 없습니다.</h2>";
+    } else {
+      const draft = JSON.parse(savedData);
+      const todayStr = new Date().toISOString().split("T")[0].replace(/-/g, ".");
+      const parsedContent = marked.parse(draft.content || "");
 
       postArea.innerHTML = `
         <div class="post-header">
-          <h2>${previewData.title || '제목 없음'}</h2>
+          <h2>${draft.title || '제목 없음'}</h2>
           <div class="post-meta">
-            <span>👤 ${previewData.author || '익명'}</span>
-            <span>🏷️ ${getCategoryName(previewData.category)}</span>
-            <span>📅 ${dateStr}</span>
-            <span>🤖 ${previewData.aiModel || 'AI Collaboration'}</span>
+            <span>👤 ${draft.author || '익명'}</span>
+            <span>🏷️ ${getCategoryName(draft.category)}</span>
+            <span>📅 ${todayStr}</span>
+            <span>🤖 ${draft.aiModel || 'AI Collaboration'}</span>
           </div>
-          ${previewData.summary ? `<p style="margin-top:15px; color:var(--accent);">💡 요약: ${previewData.summary}</p>` : ''}
+          ${draft.summary ? `<p style="margin-top:15px; color:var(--accent);">💡 요약: ${draft.summary}</p>` : ''}
         </div>
         <div class="post-content">${parsedContent}</div>
       `;
-    });
+
+      // ✏️ 계속 수정하기 버튼 (write.html로 돌아가기)
+      document.getElementById("editBtn").addEventListener("click", () => {
+        window.location.href = "write.html";
+      });
+
+      // 🚀 이대로 발행하기 버튼
+      document.getElementById("publishBtn").addEventListener("click", () => {
+        if (!draft.title || !draft.author || !draft.password || !draft.content) {
+          alert("필수 항목(제목, 작성자, 비밀번호, 본문)이 누락되었습니다. 작성 페이지로 돌아가 확인해주세요.");
+          window.location.href = "write.html";
+          return;
+        }
+
+        draft.createdAt = new Date().toISOString();
+
+        push(ref(db, "posts"), draft)
+          .then(() => {
+            sessionStorage.removeItem("draftPost"); // 등록 완료 후 임시 데이터 삭제
+            alert("포스트가 성공적으로 발행되었습니다!");
+            window.location.href = "index.html";
+          })
+          .catch((error) => {
+            alert("발행 실패: " + error.message);
+          });
+      });
+    }
   </script>
 </body>
 </html>
