@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | AI Collaborations & Tech Archive</title>
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // github.io 주소로 접속했을 때 커스텀 도메인으로 이동시키는 예시
+    if (window.location.hostname.includes('github.io')) {
+      window.location.href = 'https://www.synaptry.com' + window.location.pathname;
+    }
+  </script>
 </head>
 <body>
   <header>
