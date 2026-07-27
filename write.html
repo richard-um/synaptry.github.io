@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synaptry | Write Post</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
+      <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
+    </div>
+  </header>
+
+  <main class="write-container">
+    <h2>✍️ 새 포스트 기록하기</h2>
+    <form id="postForm" style="margin-top: 20px;">
+      <div class="form-group">
+        <label for="title">제목</label>
+        <input type="text" id="title" required placeholder="포스트 제목을 입력하세요">
+      </div>
+      <div class="form-group">
+        <label for="category">카테고리</label>
+        <select id="category">
+          <option value="Hardware">Hardware & Embedded</option>
+          <option value="C#">C# & Windows Apps</option>
+          <option value="Android">Android App Dev</option>
+          <option value="Python">Python & AI Scripts</option>
+          <option value="Math">Mathematics</option>
+          <option value="Philosophy">Philosophy & Thought</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="aiModel">사용된 AI 모델</label>
+        <input type="text" id="aiModel" placeholder="예: Gemini 1.5 Pro, Claude 3.5 Sonnet">
+      </div>
+      <div class="form-group">
+        <label for="summary">요약 (Summary)</label>
+        <input type="text" id="summary" placeholder="핵심 내용 한 줄 요약">
+      </div>
+      <div class="form-group">
+        <label for="content">본문 내용</label>
+        <textarea id="content" required placeholder="AI와의 대화 기록, 코드 스니펫 및 설명을 자유롭게 기록하세요."></textarea>
+      </div>
+      <div class="btn-group">
+        <a href="index.html" class="btn-cancel">취소</a>
+        <button type="submit" class="btn-submit">저장 및 게시</button>
+      </div>
+    </form>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
+      authDomain: "synaptry-db.firebaseapp.com",
+      databaseURL: "https://synaptry-db-default-rtdb.firebaseio.com",
+      projectId: "synaptry-db",
+      storageBucket: "synaptry-db.firebasestorage.app",
+      messagingSenderId: "980184606882",
+      appId: "1:980184606882:web:c5302bdf71b63e37db4ffb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.getElementById("postForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const postData = {
+        title: document.getElementById("title").value,
+        category: document.getElementById("category").value,
+        aiModel: document.getElementById("aiModel").value,
+        summary: document.getElementById("summary").value,
+        content: document.getElementById("content").value,
+        createdAt: new Date().toISOString()
+      };
+
+      push(ref(db, "posts"), postData)
+        .then(() => {
+          alert("포스트가 성공적으로 등록되었습니다!");
+          window.location.href = "index.html";
+        })
+        .catch((err) => alert("저장 실패: " + err.message));
+    });
+  </script>
+</body>
+</html>
