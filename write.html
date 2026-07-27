@@ -5,69 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Write Post</title>
   <link rel="stylesheet" href="styles.css">
-
   <style>
-    /* 다변화된 마크다운 툴바 스타일 */
-    .md-toolbar {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      background: var(--card-bg);
-      padding: 8px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-    }
-    .md-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-    .md-btn:hover {
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-    .md-divider {
-      width: 1px;
-      background: var(--border);
-      margin: 0 4px;
-    }
-    
-    .form-row { display: flex; gap: 15px; }
+    .write-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--accent); }
+    .form-control { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 1rem; box-sizing: border-box; }
+    .form-control:focus { outline: none; border-color: var(--accent); }
+    textarea.form-control { height: 350px; resize: vertical; font-family: monospace; line-height: 1.5; }
+    .form-row { display: flex; gap: 20px; }
     .form-row .form-group { flex: 1; }
-
-    .btn-preview {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid #f59e0b;
-      color: #f59e0b;
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .btn-preview:hover {
-      background: #f59e0b;
-      color: #000;
-    }
-
-    textarea#content {
-      width: 100%;
-      height: 420px;
-      resize: vertical;
-      line-height: 1.6;
-      font-family: monospace;
-    }
+    .btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-secondary:hover { border-color: var(--text-main); color: var(--text-main); }
   </style>
 </head>
 <body>
@@ -79,98 +28,61 @@
   </header>
 
   <main class="write-container">
-    <h2>✍️ 새 포스트 기록하기</h2>
-    <form id="postForm" style="margin-top: 20px;">
+    <h2>✍️ 새 포스트 작성</h2>
+    <form id="writeForm" style="margin-top: 20px;">
       
-      <!-- 작성자 & 비밀번호 입력란 -->
+      <div class="form-group">
+        <label for="title">제목</label>
+        <input type="text" id="title" class="form-control" required placeholder="포스트 제목을 입력하세요">
+      </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label for="author">작성자 이름</label>
-          <input type="text" id="author" required placeholder="작성자 이름을 입력하세요">
+          <label for="author">작성자</label>
+          <input type="text" id="author" class="form-control" placeholder="이름 또는 닉네임" required>
+        </div>
+        <div class="form-group">
+          <label for="category">카테고리</label>
+          <select id="category" class="form-control" required>
+            <option value="Hardware">하드웨어</option>
+            <option value="Software">소프트웨어</option>
+            <option value="Math">수학</option>
+            <option value="Physics">물리학</option>
+            <option value="Philosophy">철학</option>
+            <option value="Etc">기타</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="aiModel">사용한 AI 모델</label>
+          <input type="text" id="aiModel" class="form-control" placeholder="예: Claude 3.5 Sonnet, ChatGPT-4o">
         </div>
         <div class="form-group">
           <label for="password">삭제 비밀번호</label>
-          <input type="password" id="password" required placeholder="포스트 삭제 시 필요한 비밀번호">
+          <input type="password" id="password" class="form-control" placeholder="포스트 삭제 시 필요" required>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="title">제목</label>
-        <input type="text" id="title" required placeholder="포스트 제목을 입력하세요">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="category">카테고리</label>
-          <select id="category">
-            <option value="Hardware">하드웨어 (Hardware)</option>
-            <option value="Software">소프트웨어 (Software)</option>
-            <option value="Math">수학 (Mathematics)</option>
-            <option value="Physics">물리학 (Physics)</option>
-            <option value="Philosophy">철학 (Philosophy)</option>
-            <option value="Etc">기타 (Etc)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="aiModel">사용된 AI 모델</label>
-          <input type="text" id="aiModel" placeholder="예: Gemini 1.5 Pro, Claude 3.5 Sonnet">
-        </div>
+        <label for="summary">한 줄 요약 (선택)</label>
+        <input type="text" id="summary" class="form-control" placeholder="포스트의 핵심 내용을 한 문장으로 요약해 주세요">
       </div>
 
       <div class="form-group">
-        <label for="summary">요약 (Summary)</label>
-        <input type="text" id="summary" placeholder="핵심 내용 한 줄 요약">
-      </div>
-      
-      <!-- 마크다운 에디터 (다양한 툴바 지원) -->
-      <div class="form-group">
-        <label for="content">본문 내용 (Markdown 지원)</label>
-        
-        <div class="md-toolbar">
-          <!-- 제목 레벨 -->
-          <button type="button" class="md-btn" onclick="insertMD('# ', '')">H1</button>
-          <button type="button" class="md-btn" onclick="insertMD('## ', '')">H2</button>
-          <button type="button" class="md-btn" onclick="insertMD('### ', '')">H3</button>
-          <div class="md-divider"></div>
-          
-          <!-- 서식 -->
-          <button type="button" class="md-btn" onclick="insertMD('**', '**')"><b>B</b> 굵게</button>
-          <button type="button" class="md-btn" onclick="insertMD('*', '*')"><i>I</i> 기울임</button>
-          <button type="button" class="md-btn" onclick="insertMD('~~', '~~')"><s>S</s> 취소선</button>
-          <button type="button" class="md-btn" onclick="insertMD('`', '`')">Inline Code</button>
-          <div class="md-divider"></div>
-
-          <!-- 블록/기능 요소 -->
-          <button type="button" class="md-btn" onclick="insertMD('```\n', '\n```')">💻 코드블록</button>
-          <button type="button" class="md-btn" onclick="insertMD('> ', '')">💬 인용구</button>
-          <button type="button" class="md-btn" onclick="insertMD('- ', '')">• 목록</button>
-          <button type="button" class="md-btn" onclick="insertMD('1. ', '')">1. 숫자목록</button>
-          <button type="button" class="md-btn" onclick="insertMD('- [ ] ', '')">☑️ 체크리스트</button>
-          <div class="md-divider"></div>
-
-          <!-- 미디어/표/기타 -->
-          <button type="button" class="md-btn" onclick="insertMD('[', '](https://)')">🔗 링크</button>
-          <button type="button" class="md-btn" onclick="insertMD('![설명](', ')')">🖼️ 이미지</button>
-          <button type="button" class="md-btn" onclick="insertMD('| 헤더1 | 헤더2 |\n| --- | --- |\n| 내용1 | 내용2 |', '')">📊 표</button>
-          <button type="button" class="md-btn" onclick="insertMD('\n---\n', '')">➖ 구분선</button>
-        </div>
-
-        <textarea id="content" required placeholder="AI와의 대화 기록, 마크다운 문법, 코드 등을 자유롭게 작성하세요."></textarea>
+        <label for="content">본문 내용 (마크다운 지원)</label>
+        <textarea id="content" class="form-control" required placeholder="마크다운 문법을 사용하여 자유롭게 작성하세요..."></textarea>
       </div>
 
-      <div class="btn-group" style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-        <button type="button" class="btn-preview" onclick="openPreview()">👁️ 미리보기</button>
-        <a href="index.html" class="btn-cancel">취소</a>
-        <button type="submit" class="btn-submit">저장 및 게시</button>
+      <div class="btn-group">
+        <button type="button" class="btn-submit btn-secondary" onclick="history.back()">취소</button>
+        <button type="button" id="previewBtn" class="btn-submit btn-secondary">👁️ 미리보기</button>
+        <button type="submit" class="btn-submit">🚀 발행하기</button>
       </div>
+
     </form>
   </main>
-
-  <footer>
-    <div class="container">
-      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
-    </div>
-  </footer>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -189,56 +101,57 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const contentTextarea = document.getElementById("content");
-
-    // 툴바 버튼 클릭 시 커서 위치에 문법 삽입
-    window.insertMD = (before, after) => {
-      const start = contentTextarea.selectionStart;
-      const end = contentTextarea.selectionEnd;
-      const selected = contentTextarea.value.substring(start, end);
-      const replacement = before + selected + after;
-      
-      contentTextarea.value = contentTextarea.value.substring(0, start) + replacement + contentTextarea.value.substring(end);
-      contentTextarea.focus();
-      contentTextarea.setSelectionRange(start + before.length, end + before.length);
-    };
-
-    // preview.html 페이지로 팝업/새 창 띄우기
-    window.openPreview = () => {
-      const previewData = {
-        author: document.getElementById("author").value,
+    // 폼 입력 데이터 객체 획득 함수
+    function getFormData() {
+      return {
         title: document.getElementById("title").value,
+        author: document.getElementById("author").value,
         category: document.getElementById("category").value,
         aiModel: document.getElementById("aiModel").value,
+        password: document.getElementById("password").value,
         summary: document.getElementById("summary").value,
-        content: contentTextarea.value
+        content: document.getElementById("content").value
       };
+    }
 
-      sessionStorage.setItem("synaptry_preview_data", JSON.stringify(previewData));
-      window.open("preview.html", "_blank");
-    };
+    // 기존 복원 데이터 복구
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedData = sessionStorage.getItem("draftPost");
+      if (savedData) {
+        const draft = JSON.parse(savedData);
+        document.getElementById("title").value = draft.title || "";
+        document.getElementById("author").value = draft.author || "";
+        document.getElementById("category").value = draft.category || "Hardware";
+        document.getElementById("aiModel").value = draft.aiModel || "";
+        document.getElementById("password").value = draft.password || "";
+        document.getElementById("summary").value = draft.summary || "";
+        document.getElementById("content").value = draft.content || "";
+      }
+    });
 
-    // 폼 제출 (Firebase 저장)
-    document.getElementById("postForm").addEventListener("submit", (e) => {
+    // 미리보기 버튼 클릭 시 임시 저장 후 preview.html 로 이동
+    document.getElementById("previewBtn").addEventListener("click", () => {
+      const formData = getFormData();
+      sessionStorage.setItem("draftPost", JSON.stringify(formData));
+      window.location.href = "preview.html";
+    });
+
+    // 포스트 최종 등록
+    document.getElementById("writeForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const postData = {
-        author: document.getElementById("author").value,
-        password: document.getElementById("password").value,
-        title: document.getElementById("title").value,
-        category: document.getElementById("category").value,
-        aiModel: document.getElementById("aiModel").value,
-        summary: document.getElementById("summary").value,
-        content: contentTextarea.value,
-        createdAt: new Date().toISOString()
-      };
+      const formData = getFormData();
+      formData.createdAt = new Date().toISOString();
 
-      push(ref(db, "posts"), postData)
+      push(ref(db, "posts"), formData)
         .then(() => {
-          alert("포스트가 성공적으로 등록되었습니다!");
+          sessionStorage.removeItem("draftPost"); // 등록 성공 시 임시 저장 데이터 삭제
+          alert("포스트가 성공적으로 발행되었습니다!");
           window.location.href = "index.html";
         })
-        .catch((err) => alert("저장 실패: " + err.message));
+        .catch((error) => {
+          alert("발행 실패: " + error.message);
+        });
     });
   </script>
 </body>
