@@ -66,7 +66,7 @@ header {
   margin: 0 auto;
 }
 
-/* --- Grid & Category Cards --- */
+/* --- Grid & Category Cards (Index 페이지 메인 영역) --- */
 .categories {
   margin-bottom: 40px;
 }
@@ -120,7 +120,7 @@ header {
   margin-bottom: 12px;
 }
 
-/* --- Write Page Layout --- */
+/* --- Write Page Layout (글쓰기 페이지 전용) --- */
 .write-container { 
   max-width: 800px; 
   margin: 40px auto; 
@@ -169,7 +169,6 @@ textarea.form-control {
   flex: 1; 
 }
 
-/* --- Editor Control (Rich Text) --- */
 .editor-control {
   width: 100%;
   min-height: 350px;
@@ -218,7 +217,7 @@ textarea.form-control {
   color: var(--text-main); 
 }
 
-/* --- Post Detail Page --- */
+/* --- Post Detail Page (상세 페이지 영역) --- */
 .post-detail-container { 
   max-width: 800px; 
   margin: 40px auto; 
@@ -309,6 +308,7 @@ textarea.form-control {
   white-space: pre-line; 
 }
 
+/* --- Gemini 대화 및 Rich Text 본문 스타일 보정 (첫 줄 잘림 방지) --- */
 .post-content { 
   line-height: 1.8; 
   font-size: 1.05rem; 
