@@ -3,47 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Synaptry - Post</title>
+  <title>Synaptry | Post Detail</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Marked.js (마크다운 파싱 라이브러리) -->
+  
+  <!-- 마크다운 렌더링 라이브러리 (Marked.js) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
+    .post-meta-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
+    
+    .btn-delete-post {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-delete-post:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    /* 요약(Summary) 스타일 */
+    .post-summary-box {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: rgba(59, 130, 246, 0.08);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+    }
+    .post-summary-box strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+    .post-summary-box p {
+      margin: 0;
+      color: var(--text-main);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* 마크다운 스타일 */
+    .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
+    .post-content h1, .post-content h2, .post-content h3 { margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
+    .post-content p { margin-bottom: 16px; }
+    .post-content ul, .post-content ol { padding-left: 20px; margin-bottom: 16px; }
+    .post-content blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--text-muted); margin: 16px 0; }
+    .post-content pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+    .post-content code { background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .post-content pre code { background: none; padding: 0; }
+    .post-content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .post-content th, .post-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    .post-content th { background: var(--card-bg); color: var(--accent); }
+    .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 16px 0; }
+
+    /* 댓글 스타일 */
+    .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
+    .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
+    .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
+    .comment-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .comment-author { font-weight: bold; color: var(--accent); }
+    .btn-reply-toggle { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; }
+    
+    .comment-form { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .comment-form input, .comment-form textarea {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); padding: 10px;
+    }
+    .comment-form textarea { height: 80px; resize: vertical; }
+    .reply-form { margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border-radius: 6px; display: none; }
+  </style>
 </head>
 <body>
-
-  <!-- 상단 네비게이션 바 -->
-  <header class="navbar">
-    <a href="index.html" class="nav-logo">
-      <span class="logo-accent">S</span>ynaptry
-    </a>
-    <div class="nav-links">
-      <a href="index.html">홈</a>
-      <a href="write.html">글쓰기</a>
+  <header>
+    <div class="container header-container">
+      <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
+      <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
     </div>
   </header>
 
-  <!-- 본문 컨테이너 -->
-  <main class="post-container">
+  <main class="post-detail-container">
     <div id="postArea">
       <p style="color: var(--text-muted);">포스트를 불러오는 중입니다...</p>
     </div>
 
-    <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border);">
-
-    <!-- 댓글 영역 -->
+    <!-- 댓글 섹션 -->
     <section class="comments-section">
-      <h3>💬 댓글</h3>
-      
-      <!-- 댓글 작성 폼 -->
-      <form id="commentForm" style="margin-bottom: 24px;">
-        <input type="text" id="commentAuthor" placeholder="작성자 이름" required style="width: 100%; margin-bottom: 8px; padding: 8px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 4px;">
-        <textarea id="commentContent" placeholder="댓글을 입력하세요..." required style="width: 100%; height: 80px; padding: 8px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); border-radius: 4px; margin-bottom: 8px;"></textarea>
-        <button type="submit" class="btn-submit">댓글 등록</button>
-      </form>
+      <h3>💬 댓글 및 토론</h3>
+      <div id="commentsList" style="margin-top: 20px;">
+        <p style="color: var(--text-muted); font-size: 0.9rem;">작성된 댓글이 없습니다.</p>
+      </div>
 
-      <!-- 댓글 목록 -->
-      <div id="commentsList"></div>
+      <form id="commentForm" class="comment-form">
+        <h4>댓글 남기기</h4>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="commentAuthor" required placeholder="작성자 이름" style="flex: 1;">
+          <input type="password" id="commentPassword" placeholder="비밀번호(선택)" style="flex: 1;">
+        </div>
+        <textarea id="commentContent" required placeholder="댓글을 작성하세요..."></textarea>
+        <button type="submit" class="btn-submit" style="align-self: flex-end; padding: 8px 20px;">댓글 등록</button>
+      </form>
     </section>
   </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Synaptry. Powered by AI Collaboration.</p>
+    </div>
+  </footer>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -62,8 +136,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 관리자 마스터 암호 "djatldms2@" (Base64 인코딩)
-    const ADMIN_PW_ENCODED = "ZGphdGxkbXMyQA=="; // atob("ZGphdGxkbXMyQA==") === "djatldms2@"
+    // 관리자 마스터 비밀번호 ("djatldms2@")
+    const ADMIN_PASSWORD = "djatldms2@";
 
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
@@ -102,28 +176,32 @@
               </div>
               <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
             </div>
+            
+            <!-- write.html에서 입력한 요약(Summary) 본문 전에 표시 -->
             ${post.summary ? `
-              <div style="margin-top: 18px; padding: 14px 16px; background: rgba(59, 130, 246, 0.08); border-left: 4px solid var(--accent); border-radius: 4px;">
-                <strong style="color: var(--accent); display: block; margin-bottom: 4px;">💡 요약</strong>
-                <span style="color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">${post.summary}</span>
+              <div class="post-summary-box">
+                <strong>💡 요약</strong>
+                <p>${post.summary}</p>
               </div>
             ` : ''}
           </div>
+          
+          <!-- 본문 영역 -->
           <div class="post-content">${parsedContent}</div>
         `;
 
-        // 삭제 처리 로직 (작성자 비밀번호 OR 관리자 마스터 비밀번호)
+        // 삭제 버튼 이벤트
         document.getElementById("deletePostBtn").addEventListener("click", () => {
           const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
           if (rawInput === null) return;
 
-          const inputPw = rawInput.trim();
+          const inputPw = rawInput.trim(); // 공백 제거
 
-          const isAuthorPasswordMatch = post.password && inputPw === post.password;
-          const isAdminPasswordMatch = inputPw === atob(ADMIN_PW_ENCODED); // "djatldms2@" 확인
+          const isAuthorMatch = post.password && inputPw === post.password;
+          const isAdminMatch = inputPw === ADMIN_PASSWORD; // "djatldms2@" 검증
 
-          if (isAuthorPasswordMatch || isAdminPasswordMatch) {
-            const confirmMsg = isAdminPasswordMatch 
+          if (isAuthorMatch || isAdminMatch) {
+            const confirmMsg = isAdminMatch 
               ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
               : "정말로 이 포스트를 삭제하시겠습니까?";
 
@@ -139,7 +217,7 @@
         });
       });
 
-      // 2. 댓글 및 답글 로드
+      // 2. 댓글 로드
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
         commentsList.innerHTML = "";
@@ -175,7 +253,7 @@
       });
     }
 
-    // 댓글 등록
+    // 댓글 작성
     document.getElementById("commentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const author = document.getElementById("commentAuthor").value;
