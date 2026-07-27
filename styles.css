@@ -120,6 +120,104 @@ header {
   margin-bottom: 12px;
 }
 
+/* --- Write Page Layout --- */
+.write-container { 
+  max-width: 800px; 
+  margin: 40px auto; 
+  padding: 0 20px; 
+}
+
+.form-group { 
+  margin-bottom: 20px; 
+}
+
+.form-group label { 
+  display: block; 
+  margin-bottom: 8px; 
+  font-weight: bold; 
+  color: var(--accent); 
+}
+
+.form-control { 
+  width: 100%; 
+  padding: 12px; 
+  background: var(--card-bg); 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  color: var(--text-main); 
+  font-size: 1rem; 
+  box-sizing: border-box; 
+}
+
+.form-control:focus { 
+  outline: none; 
+  border-color: var(--accent); 
+}
+
+textarea.form-control { 
+  resize: vertical; 
+  font-family: inherit; 
+  line-height: 1.5; 
+}
+
+.form-row { 
+  display: flex; 
+  gap: 20px; 
+}
+
+.form-row .form-group { 
+  flex: 1; 
+}
+
+/* --- Editor Control (Rich Text) --- */
+.editor-control {
+  width: 100%;
+  min-height: 350px;
+  height: auto !important;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.6;
+  box-sizing: border-box;
+  outline: none;
+  overflow-y: auto;
+}
+
+.editor-control:focus { 
+  border-color: var(--accent); 
+}
+
+.editor-control[placeholder]:empty:before {
+  content: attr(placeholder);
+  color: var(--text-muted);
+  cursor: text;
+}
+
+.editor-control * {
+  max-height: none !important;
+}
+
+.btn-group { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 10px; 
+  margin-top: 30px; 
+}
+
+.btn-secondary { 
+  background: transparent; 
+  border: 1px solid var(--border); 
+  color: var(--text-muted); 
+}
+
+.btn-secondary:hover { 
+  border-color: var(--text-main); 
+  color: var(--text-main); 
+}
+
 /* --- Post Detail Page --- */
 .post-detail-container { 
   max-width: 800px; 
@@ -166,6 +264,7 @@ header {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .btn-flow-toggle:hover { 
   background: #10b981; 
   color: #ffffff; 
@@ -181,6 +280,7 @@ header {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .btn-delete-post:hover { 
   background: #ef4444; 
   color: #ffffff; 
@@ -193,12 +293,14 @@ header {
   border-left: 4px solid var(--accent);
   border-radius: 6px;
 }
+
 .post-summary-box strong { 
   color: var(--accent); 
   display: block; 
   margin-bottom: 6px; 
   font-size: 0.95rem; 
 }
+
 .post-summary-box p { 
   margin: 0; 
   color: var(--text-main); 
@@ -207,7 +309,6 @@ header {
   white-space: pre-line; 
 }
 
-/* --- Gemini 대화 및 Rich Text 본문 스타일 보정 (첫 줄 잘림 방지) --- */
 .post-content { 
   line-height: 1.8; 
   font-size: 1.05rem; 
@@ -218,7 +319,6 @@ header {
   overflow: visible !important;
 }
 
-/* 외부 복사 태그들의 높이/스크롤 제한 강제 해제 */
 .post-content * {
   max-height: none !important;
   overflow: visible !important;
@@ -245,9 +345,11 @@ header {
   border-radius: 8px;
   animation: fadeIn 0.3s ease;
 }
+
 .flow-diagram-container.active { 
   display: block !important; 
 }
+
 @keyframes fadeIn { 
   from { opacity: 0; transform: translateY(-8px); } 
   to { opacity: 1; transform: translateY(0); } 
@@ -270,6 +372,7 @@ header {
   position: relative; 
   padding-left: 10px; 
 }
+
 .git-graph::before {
   content: '';
   position: absolute;
@@ -294,11 +397,13 @@ header {
   border: 1px solid transparent;
   transition: all 0.2s ease;
 }
+
 .git-node:hover {
   background: rgba(59, 130, 246, 0.12);
   border-color: var(--accent);
   transform: translateX(4px);
 }
+
 .git-node.active {
   background: rgba(59, 130, 246, 0.2);
   border-color: var(--accent);
@@ -313,6 +418,7 @@ header {
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
   flex-shrink: 0;
 }
+
 .git-node.branch-main .git-dot { background: #3b82f6; }
 .git-node.branch-feature .git-dot { background: #10b981; }
 
@@ -324,6 +430,7 @@ header {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-muted);
 }
+
 .git-node.branch-main .git-branch-tag { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 .git-node.branch-feature .git-branch-tag { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 
@@ -341,11 +448,13 @@ header {
   border-radius: 6px;
   display: none;
 }
+
 .flow-preview-card h4 { 
   margin: 0 0 8px 0; 
   color: var(--accent); 
   font-size: 1.05rem; 
 }
+
 .flow-preview-card p { 
   margin: 0; 
   color: var(--text-main); 
@@ -367,6 +476,7 @@ header {
   padding: 15px; 
   margin-bottom: 12px; 
 }
+
 .comment-card.reply { 
   margin-left: 30px; 
   border-left: 3px solid var(--accent); 
@@ -379,6 +489,7 @@ header {
   color: var(--text-muted); 
   margin-bottom: 8px; 
 }
+
 .comment-author { 
   font-weight: bold; 
   color: var(--accent); 
@@ -401,6 +512,7 @@ header {
   flex-direction: column; 
   gap: 10px; 
 }
+
 .comment-form input, 
 .comment-form textarea {
   background: var(--card-bg); 
@@ -409,6 +521,7 @@ header {
   color: var(--text-main); 
   padding: 10px;
 }
+
 .comment-form textarea { 
   height: 80px; 
   resize: vertical; 
@@ -433,6 +546,7 @@ header {
   cursor: pointer;
   transition: background 0.2s ease;
 }
+
 .btn-submit:hover {
   background: var(--accent-hover);
   color: #fff;
