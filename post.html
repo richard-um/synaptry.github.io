@@ -5,52 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Post Detail</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <style>
-    .post-detail-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    .post-header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
-    .post-meta-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-    .post-meta { display: flex; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
-    
-    .btn-delete-post {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid #ef4444;
-      color: #ef4444;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .btn-delete-post:hover { background: #ef4444; color: #ffffff; }
-
-    /* 시작 프롬프트 박스 */
-    .post-summary-box {
-      margin-top: 20px;
-      padding: 16px 20px;
-      background: rgba(59, 130, 246, 0.08);
-      border-left: 4px solid var(--accent);
-      border-radius: 6px;
-    }
-    .post-summary-box strong { color: var(--accent); display: block; margin-bottom: 6px; font-size: 0.95rem; }
-    .post-summary-box p { margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
-
-    .post-content { line-height: 1.8; font-size: 1.05rem; margin-bottom: 50px; }
-    .comments-section { border-top: 1px solid var(--border); padding-top: 30px; }
-    .comment-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 12px; }
-    .comment-card.reply { margin-left: 30px; border-left: 3px solid var(--accent); }
-    .comment-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
-    .comment-author { font-weight: bold; color: var(--accent); }
-    .btn-reply-toggle { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; }
-    
-    .comment-form { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-    .comment-form input, .comment-form textarea {
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); padding: 10px;
-    }
-    .comment-form textarea { height: 80px; resize: vertical; }
-    .reply-form { margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border-radius: 6px; display: none; }
-  </style>
 </head>
 <body>
   <header>
@@ -64,6 +18,17 @@
     <div id="postArea">
       <p style="color: var(--text-muted);">포스트를 불러오는 중입니다...</p>
     </div>
+
+    <!-- Git 브랜치 흐름도 영역 -->
+    <section id="flowDiagramContainer" class="flow-diagram-container">
+      <div class="flow-title">🌿 대화 흐름 다이어그램 (Git Branch View)</div>
+      <div id="gitGraph" class="git-graph"></div>
+      
+      <div id="flowPreviewCard" class="flow-preview-card">
+        <h4 id="flowCardTitle">노드를 선택하세요</h4>
+        <p id="flowCardSummary">브랜치 노드를 클릭하면 해당 구간의 대화 요약 내용이 표시됩니다.</p>
+      </div>
+    </section>
 
     <section class="comments-section">
       <h3>💬 댓글 및 토론</h3>
@@ -129,7 +94,6 @@
         }
 
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
-        const parsedContent = marked.parse(post.content || "");
 
         postArea.innerHTML = `
           <div class="post-header">
@@ -141,7 +105,10 @@
                 <span>📅 ${dateStr}</span>
                 <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
               </div>
-              <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
+              <div class="action-btn-group">
+                <button class="btn-flow-toggle" id="toggleFlowBtn">🌿 대화 흐름보기</button>
+                <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
+              </div>
             </div>
             
             ${post.summary ? `
@@ -152,32 +119,46 @@
             ` : ''}
           </div>
           
-          <div class="post-content">${parsedContent}</div>
+          <div class="post-content" id="mainPostContent">${post.content || ""}</div>
         `;
 
-        document.getElementById("deletePostBtn").addEventListener("click", () => {
-          const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
-          if (rawInput === null) return;
+        setupFlowDiagram(post);
 
-          const inputPw = rawInput.trim();
-          const isAuthorMatch = post.password && inputPw === post.password;
-          const isAdminMatch = inputPw === ADMIN_PASSWORD;
+        const toggleBtn = document.getElementById("toggleFlowBtn");
+        const flowContainer = document.getElementById("flowDiagramContainer");
 
-          if (isAuthorMatch || isAdminMatch) {
-            const confirmMsg = isAdminMatch 
-              ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
-              : "정말로 이 포스트를 삭제하시겠습니까?";
+        if (toggleBtn && flowContainer) {
+          toggleBtn.addEventListener("click", () => {
+            flowContainer.classList.toggle("active");
+          });
+        }
 
-            if (confirm(confirmMsg)) {
-              remove(ref(db, `posts/${postId}`));
-              remove(ref(db, `comments/${postId}`));
-              alert("포스트가 성공적으로 삭제되었습니다.");
-              window.location.href = "index.html";
+        const deleteBtn = document.getElementById("deletePostBtn");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", () => {
+            const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
+            if (rawInput === null) return;
+
+            const inputPw = rawInput.trim();
+            const isAuthorMatch = post.password && inputPw === post.password;
+            const isAdminMatch = inputPw === ADMIN_PASSWORD;
+
+            if (isAuthorMatch || isAdminMatch) {
+              const confirmMsg = isAdminMatch 
+                ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
+                : "정말로 이 포스트를 삭제하시겠습니까?";
+
+              if (confirm(confirmMsg)) {
+                remove(ref(db, `posts/${postId}`));
+                remove(ref(db, `comments/${postId}`));
+                alert("포스트가 성공적으로 삭제되었습니다.");
+                window.location.href = "index.html";
+              }
+            } else {
+              alert("비밀번호가 일치하지 않습니다.");
             }
-          } else {
-            alert("비밀번호가 일치하지 않습니다.");
-          }
-        });
+          });
+        }
       });
 
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
@@ -212,6 +193,86 @@
           `;
           commentsList.appendChild(commentEl);
         });
+      });
+    }
+
+    function setupFlowDiagram(post) {
+      const gitGraph = document.getElementById("gitGraph");
+      const previewCard = document.getElementById("flowPreviewCard");
+      const cardTitle = document.getElementById("flowCardTitle");
+      const cardSummary = document.getElementById("flowCardSummary");
+
+      let flowNodes = [];
+
+      if (post.flow && Array.isArray(post.flow) && post.flow.length > 0) {
+        flowNodes = post.flow;
+      } else {
+        if (post.summary) {
+          flowNodes.push({
+            branch: "main",
+            title: "🚀 시작 프롬프트 (초기 논제)",
+            summary: post.summary
+          });
+        }
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = post.content || "";
+        const headings = tempDiv.querySelectorAll("h1, h2, h3, h4, strong");
+
+        headings.forEach((h, idx) => {
+          let nextElem = h.nextElementSibling;
+          let contentSnippet = "";
+          while (nextElem && !['H1','H2','H3','H4'].includes(nextElem.tagName)) {
+            contentSnippet += (nextElem.innerText || nextElem.textContent || "") + " ";
+            nextElem = nextElem.nextElementSibling;
+          }
+
+          const nodeTitle = h.innerText || h.textContent;
+          if (nodeTitle && nodeTitle.trim().length > 0) {
+            flowNodes.push({
+              branch: idx === 0 ? "main" : (idx % 2 === 1 ? "feature/deep-dive" : "feature/resolution"),
+              title: nodeTitle.trim(),
+              summary: contentSnippet.trim().substring(0, 200) + (contentSnippet.length > 200 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다."
+            });
+          }
+        });
+
+        if (flowNodes.length === (post.summary ? 1 : 0)) {
+          const textContent = tempDiv.innerText || tempDiv.textContent || "";
+          const paragraphs = textContent.split("\n\n").filter(p => p.trim().length > 0);
+          paragraphs.forEach((p, idx) => {
+            flowNodes.push({
+              branch: idx === 0 ? "main" : "feature/discussion",
+              title: `대화/탐구 단계 ${idx + 1}`,
+              summary: p.substring(0, 150) + (p.length > 150 ? "..." : "")
+            });
+          });
+        }
+      }
+
+      gitGraph.innerHTML = "";
+
+      flowNodes.forEach((node) => {
+        const nodeEl = document.createElement("div");
+        const branchClass = node.branch.includes("main") ? "branch-main" : "branch-feature";
+        nodeEl.className = `git-node ${branchClass}`;
+        
+        nodeEl.innerHTML = `
+          <div class="git-dot"></div>
+          <span class="git-branch-tag">${node.branch || 'main'}</span>
+          <span class="git-node-label">${node.title}</span>
+        `;
+
+        nodeEl.addEventListener("click", () => {
+          document.querySelectorAll(".git-node").forEach(n => n.classList.remove("active"));
+          nodeEl.classList.add("active");
+
+          previewCard.style.display = "block";
+          cardTitle.innerText = `${node.branch ? '[' + node.branch + '] ' : ''}${node.title}`;
+          cardSummary.innerText = node.summary || "내용이 없습니다.";
+        });
+
+        gitGraph.appendChild(nodeEl);
       });
     }
 
