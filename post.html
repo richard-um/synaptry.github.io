@@ -23,13 +23,8 @@
 
     <!-- Git 브랜치 흐름도 영역 -->
     <section id="flowDiagramContainer" class="flow-diagram-container">
-      <div class="flow-title">🌿 대화 흐름 다이어그램 (Git Branch View)</div>
-      <div id="gitGraph" class="git-graph"></div>
-      
-      <div id="flowPreviewCard" class="flow-preview-card">
-        <h4 id="flowCardTitle">노드를 선택하세요</h4>
-        <p id="flowCardSummary">브랜치 노드를 클릭하면 해당 구간의 대화 요약 내용이 표시됩니다.</p>
-      </div>
+      <div class="flow-title">🌿 대화 흐름 보기</div>
+      <div id="flowTimeline" class="flow-timeline"></div>
     </section>
 
     <section class="comments-section">
@@ -61,7 +56,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
@@ -107,6 +102,46 @@
     const postArea = document.getElementById("postArea");
     const commentsList = document.getElementById("commentsList");
     let currentPost = null;
+
+    function getStoredLikeState() {
+      try {
+        const stored = JSON.parse(localStorage.getItem("synaptry-liked-posts") || "{}");
+        return stored && typeof stored === "object" ? stored : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveStoredLikeState(likes) {
+      localStorage.setItem("synaptry-liked-posts", JSON.stringify(likes));
+    }
+
+    function toggleLike() {
+      if (!postId || !currentPost) return;
+
+      const likedPosts = getStoredLikeState();
+      const isLiked = Boolean(likedPosts[postId]);
+      const nextLikes = Math.max(0, Number(currentPost.likes || 0) + (isLiked ? -1 : 1));
+
+      likedPosts[postId] = !isLiked;
+      saveStoredLikeState(likedPosts);
+
+      update(ref(db, `posts/${postId}`), { likes: nextLikes })
+        .then(() => {
+          currentPost.likes = nextLikes;
+          const likeButton = document.getElementById("likePostBtn");
+          if (likeButton) {
+            likeButton.classList.toggle("active", !isLiked);
+            likeButton.innerHTML = `${!isLiked ? "👍 추천함" : "👍 추천"} ${nextLikes}`;
+          }
+        })
+        .catch((error) => {
+          console.error("좋아요 업데이트 실패:", error);
+          alert("좋아요를 반영하지 못했습니다.");
+        });
+    }
+
+    window.toggleLike = toggleLike;
 
     function handleEditPost() {
       if (!postId) {
@@ -185,6 +220,9 @@
 
         currentPost = post;
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
+        const likedPosts = getStoredLikeState();
+        const isLiked = Boolean(likedPosts[postId]);
+        const likeCount = Number(post.likes || 0);
 
         postArea.innerHTML = `
           <div class="post-header">
@@ -197,7 +235,7 @@
                 <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
               </div>
               <div class="action-btn-group">
-                <button class="btn-flow-toggle" id="toggleFlowBtn" type="button" onclick="toggleFlowView()">🌿 대화 흐름보기</button>
+                <button class="btn-action ${isLiked ? 'active' : ''}" id="likePostBtn" type="button" onclick="toggleLike()">${isLiked ? '👍 추천함' : '👍 추천'} ${likeCount}</button>
                 <button class="btn-edit-post" id="editPostBtn" type="button" onclick="handleEditPost()">✏️ 수정하기</button>
                 <button class="btn-delete-post" id="deletePostBtn" type="button" onclick="handleDeletePost()">🗑️ 삭제</button>
               </div>
@@ -253,21 +291,20 @@
     }
 
     function setupFlowDiagram(post) {
-      const gitGraph = document.getElementById("gitGraph");
-      const previewCard = document.getElementById("flowPreviewCard");
-      const cardTitle = document.getElementById("flowCardTitle");
-      const cardSummary = document.getElementById("flowCardSummary");
+      const flowTimeline = document.getElementById("flowTimeline");
 
       let flowNodes = [];
 
       if (post.flow && Array.isArray(post.flow) && post.flow.length > 0) {
-        flowNodes = post.flow;
+        flowNodes = post.flow
+          .slice()
+          .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
       } else {
         if (post.summary) {
           flowNodes.push({
-            branch: "main",
             title: "🚀 시작 프롬프트 (초기 논제)",
-            summary: post.summary
+            summary: post.summary,
+            order: 1
           });
         }
 
@@ -286,9 +323,9 @@
           const nodeTitle = h.innerText || h.textContent;
           if (nodeTitle && nodeTitle.trim().length > 0) {
             flowNodes.push({
-              branch: idx === 0 ? "main" : (idx % 2 === 1 ? "feature/deep-dive" : "feature/resolution"),
               title: nodeTitle.trim(),
-              summary: contentSnippet.trim().substring(0, 200) + (contentSnippet.length > 200 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다."
+              summary: contentSnippet.trim().substring(0, 220) + (contentSnippet.length > 220 ? "..." : "") || "세부 내용 요약이 등록되지 않았습니다.",
+              order: (post.summary ? 1 : 0) + idx + 1
             });
           }
         });
@@ -298,38 +335,35 @@
           const paragraphs = textContent.split("\n\n").filter(p => p.trim().length > 0);
           paragraphs.forEach((p, idx) => {
             flowNodes.push({
-              branch: idx === 0 ? "main" : "feature/discussion",
               title: `대화/탐구 단계 ${idx + 1}`,
-              summary: p.substring(0, 150) + (p.length > 150 ? "..." : "")
+              summary: p.substring(0, 180) + (p.length > 180 ? "..." : ""),
+              order: (post.summary ? 1 : 0) + idx + 1
             });
           });
         }
       }
 
-      gitGraph.innerHTML = "";
+      flowTimeline.innerHTML = "";
 
-      flowNodes.forEach((node) => {
-        const nodeEl = document.createElement("div");
-        const branchClass = node.branch.includes("main") ? "branch-main" : "branch-feature";
-        nodeEl.className = `git-node ${branchClass}`;
-        
-        nodeEl.innerHTML = `
-          <div class="git-dot"></div>
-          <span class="git-branch-tag">${node.branch || 'main'}</span>
-          <span class="git-node-label">${node.title}</span>
-        `;
+      if (!flowNodes.length) {
+        flowTimeline.innerHTML = '<div class="flow-empty">등록된 흐름 정보가 없습니다.</div>';
+        return;
+      }
 
-        nodeEl.addEventListener("click", () => {
-          document.querySelectorAll(".git-node").forEach(n => n.classList.remove("active"));
-          nodeEl.classList.add("active");
-
-          previewCard.style.display = "block";
-          cardTitle.innerText = `${node.branch ? '[' + node.branch + '] ' : ''}${node.title}`;
-          cardSummary.innerText = node.summary || "내용이 없습니다.";
+      flowNodes
+        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+        .forEach((node, index) => {
+          const stepEl = document.createElement("div");
+          stepEl.className = "flow-step";
+          stepEl.innerHTML = `
+            <div class="flow-step-header">
+              <span class="flow-step-title">${index + 1}. ${node.title || "단계"}</span>
+              <span class="flow-step-badge">순서 ${index + 1}</span>
+            </div>
+            <div class="flow-step-summary">${node.summary || "내용이 없습니다."}</div>
+          `;
+          flowTimeline.appendChild(stepEl);
         });
-
-        gitGraph.appendChild(nodeEl);
-      });
     }
 
     document.getElementById("commentForm").addEventListener("submit", (e) => {

@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | AI Collaborations & Tech Archive</title>
-  <link rel="stylesheet" href="styles.css">
   <script>
     if (window.location.hostname.includes('github.io')) {
       window.location.href = 'https://www.synaptry.com' + window.location.pathname;
     }
   </script>
-    <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="./index.css">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./index.css">
 </head>
 <body>
   <header>
@@ -19,10 +18,9 @@
       <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
       <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
       
-      <!-- 상단 검색 및 글쓰기 이동 링크 -->
-      <div style="margin-top: 18px; display: flex; gap: 12px; justify-content: center;">
-        <a href="search.html" style="color: var(--accent); text-decoration: none; font-weight: bold; padding: 6px 16px; border: 1px solid var(--accent); border-radius: 6px; background: rgba(59, 130, 246, 0.1); font-size: 0.9rem;">🔍 상세 검색</a>
-        <a href="write.html" style="color: var(--text-main); text-decoration: none; font-weight: bold; padding: 6px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); font-size: 0.9rem;">✍️ 글쓰기</a>
+      <div class="header-actions">
+        <a href="search.html" class="header-link header-link--primary">🔍 상세 검색</a>
+        <a href="write.html" class="header-link header-link--secondary">✍️ 글쓰기</a>
       </div>
     </div>
   </header>
@@ -49,7 +47,7 @@
           <h4>소프트웨어</h4>
           <p>웹/앱 개발, 알고리즘, 시스템 아키텍처 및 자동화 코드</p>
         </div>
-        <div class="card" data-category="Mathmatics">
+        <div class="card" data-category="Math">
           <div class="badge">Math</div>
           <h4>수학</h4>
           <p>선형대수학, 미적분학, 기하학, 확률통계 및 이산수학적 사고</p>
@@ -72,18 +70,18 @@
       </div>
     </section>
 
-    <!-- 최근 포스트 목록 섹션 -->
-    <section class="posts-section" style="margin-top: 50px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 id="postsTitle" style="margin: 0; display: flex; align-items: center; gap: 10px;">
-          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
+    <section class="posts-section">
+      <div class="posts-header">
+        <h3 id="postsTitle" class="posts-title">
+          <span class="posts-title-marker"></span>
           Recent Posts
         </h3>
-        <button id="resetCategoryBtn" style="display: none; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">🔄 전체 보기</button>
+        <button id="resetCategoryBtn" class="reset-category-btn">🔄 전체 보기</button>
       </div>
       <div id="postsList" class="posts-list">
-        <p style="color: var(--text-muted);">포스트 목록을 불러오는 중입니다...</p>
+        <p class="posts-loading">포스트 목록을 불러오는 중입니다...</p>
       </div>
+      <div id="pagination" class="pagination" aria-label="포스트 페이지네이션"></div>
     </section>
   </main>
 
@@ -113,23 +111,53 @@
     const postsList = document.getElementById("postsList");
     const postsTitle = document.getElementById("postsTitle");
     const resetCategoryBtn = document.getElementById("resetCategoryBtn");
+    const pagination = document.getElementById("pagination");
 
+    const postsPerPage = 10;
     let allPosts = [];
     let selectedCategory = null;
+    let currentPage = 1;
 
-    function getCategoryName(cat) {
-      const names = { Hardware: "Hardware", Software: "Software", Math: "Mathmatics", Physics: "Physics", Philosophy: "Philosophy", Etc: "Etc" };
-      return names[cat] || cat;
+    function normalizeCategory(cat) {
+      if (!cat) return cat;
+      return cat === "Mathmatics" ? "Math" : cat;
     }
 
-    // 포스트 렌더링 함수
+    function getCategoryName(cat) {
+      const names = { Hardware: "Hardware", Software: "Software", Math: "Math", Mathmatics: "Math", Physics: "Physics", Philosophy: "Philosophy", Etc: "Etc" };
+      return names[normalizeCategory(cat)] || cat;
+    }
+
+    function renderPagination(totalPosts) {
+      const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage));
+      if (totalPages <= 1) {
+        pagination.innerHTML = "";
+        return;
+      }
+
+      const buttons = [];
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      for (let page = startPage; page <= endPage; page += 1) {
+        buttons.push(`<button type="button" class="${page === currentPage ? 'active' : ''}" data-page="${page}">${page}</button>`);
+      }
+
+      pagination.innerHTML = `
+        <button type="button" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">이전</button>
+        ${buttons.join('')}
+        <button type="button" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">다음</button>
+      `;
+    }
+
     function renderPosts() {
       let filteredPosts = allPosts;
       if (selectedCategory) {
-        filteredPosts = allPosts.filter(p => p.category === selectedCategory);
+        const normalizedSelectedCategory = normalizeCategory(selectedCategory);
+        filteredPosts = allPosts.filter(p => normalizeCategory(p.category) === normalizedSelectedCategory);
         postsTitle.innerHTML = `
           <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
-          ${getCategoryName(selectedCategory)} (${filteredPosts.length})
+          ${getCategoryName(normalizedSelectedCategory)} (${filteredPosts.length})
         `;
         resetCategoryBtn.style.display = "block";
       } else {
@@ -142,10 +170,19 @@
 
       if (filteredPosts.length === 0) {
         postsList.innerHTML = `<p style="color: var(--text-muted); padding: 20px 0;">작성된 포스트가 없습니다.</p>`;
+        pagination.innerHTML = "";
         return;
       }
 
-      postsList.innerHTML = filteredPosts.map(post => {
+      const totalPages = Math.max(1, Math.ceil(filteredPosts.length / postsPerPage));
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+
+      const startIndex = (currentPage - 1) * postsPerPage;
+      const visiblePosts = filteredPosts.slice(startIndex, startIndex + postsPerPage);
+
+      postsList.innerHTML = visiblePosts.map(post => {
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
         const summaryText = post.summary || (post.content ? post.content.substring(0, 100) + "..." : "");
 
@@ -154,16 +191,19 @@
             <h4 style="margin: 0 0 10px 0; font-size: 1.15rem;">
               <a href="post.html?id=${post.id}" style="color: var(--text-main); text-decoration: none;">${post.title}</a>
             </h4>
-            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 10px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;">
               <span>👤 ${post.author || '익명'}</span>
               <span>🏷️ ${getCategoryName(post.category)}</span>
               <span>📅 ${dateStr}</span>
               <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
+              <span>👍 ${Number(post.likes || 0)}</span>
             </div>
             <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin: 0;">${summaryText}</p>
           </div>
         `;
       }).join('');
+
+      renderPagination(filteredPosts.length);
     }
 
     // Firebase 데이터 로드
@@ -185,7 +225,8 @@
     // 카테고리 카드 클릭 필터링
     document.querySelectorAll(".categories .card").forEach(card => {
       card.addEventListener("click", () => {
-        selectedCategory = card.getAttribute("data-category");
+        selectedCategory = normalizeCategory(card.getAttribute("data-category"));
+        currentPage = 1;
         renderPosts();
         document.querySelector(".posts-section").scrollIntoView({ behavior: 'smooth' });
       });
@@ -194,7 +235,20 @@
     // 전체 보기 버튼 클릭
     resetCategoryBtn.addEventListener("click", () => {
       selectedCategory = null;
+      currentPage = 1;
       renderPosts();
+    });
+
+    pagination.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-page]");
+      if (!button) return;
+
+      const nextPage = Number(button.getAttribute("data-page"));
+      if (!Number.isNaN(nextPage) && nextPage >= 1) {
+        currentPage = nextPage;
+        renderPosts();
+        document.querySelector(".posts-section").scrollIntoView({ behavior: 'smooth' });
+      }
     });
   </script>
 </body>

@@ -1,0 +1,77 @@
+.flow-diagram-container {
+  margin-top: 32px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.flow-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.flow-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flow-step {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.flow-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.flow-step-title {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.flow-step-badge {
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.flow-step-summary {
+  color: var(--text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.flow-empty {
+  color: var(--text-muted);
+  padding: 12px 0;
+}
+
+.btn-action {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: var(--card-bg);
+  color: var(--text-main);
+}
+
+.btn-action.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}

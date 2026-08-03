@@ -34,6 +34,34 @@ header {
   text-align: center;
 }
 
+.header-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.header-link {
+  text-decoration: none;
+  font-weight: bold;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.header-link--primary {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.header-link--secondary {
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
 .logo-img {
   max-width: 320px;
   width: 100%;
@@ -118,6 +146,85 @@ header {
   padding: 2px 8px;
   border-radius: 4px;
   margin-bottom: 12px;
+}
+
+/* --- Posts Section --- */
+.posts-section {
+  margin-top: 50px;
+}
+
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.posts-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.posts-title-marker {
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.reset-category-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.reset-category-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.posts-loading,
+.posts-empty {
+  color: var(--text-muted);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pagination button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0f172a;
+}
+
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* --- Write Page Layout (글쓰기 페이지 전용) --- */
