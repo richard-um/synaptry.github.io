@@ -390,6 +390,12 @@ textarea.form-control {
   margin: 1em 0;
 }
 
+.post-content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
 .editor-preview code {
   background: rgba(56, 189, 248, 0.12);
   padding: 0.1em 0.3em;

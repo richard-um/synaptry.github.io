@@ -192,7 +192,7 @@
           return;
         }
 
-        const markdownLike = /^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|`[^`]+`|\*\*|__)/.test(trimmed);
+        const markdownLike = /^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|`[^`]+`|\*\*|__|(?:\s*[-*_]){3,}\s*)$/.test(trimmed);
         const speakerMatch = trimmed.match(/^(User|You|Me|Assistant|Gemini|Bot|AI|Model)\s*[:\-]\s*(.*)$/i);
         const mathBlock = /\$\$|\\\[|\\\(|\$/.test(trimmed);
         const numberedListMatch = trimmed.match(/^(\d+)\.?\s+(.*)$/);

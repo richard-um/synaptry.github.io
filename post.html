@@ -102,6 +102,7 @@
     const postArea = document.getElementById("postArea");
     const commentsList = document.getElementById("commentsList");
     let currentPost = null;
+    let currentComments = {};
 
     function getStoredLikeState() {
       try {
@@ -208,6 +209,87 @@
       return names[cat] || cat;
     }
 
+    function isCommentAuthorized(comment, inputPw) {
+      const password = (inputPw || "").trim();
+      const isAdminMatch = password === ADMIN_PASSWORD;
+      const isAuthorMatch = comment?.password && password === comment.password;
+      return { isAuthorized: Boolean(isAdminMatch || isAuthorMatch), isAdminMatch };
+    }
+
+    function ensureCommentAuthorization(comment, actionLabel) {
+      const rawInput = prompt(`댓글을 ${actionLabel}하려면 비밀번호를 입력하세요:`);
+      if (rawInput === null) return null;
+
+      const { isAuthorized, isAdminMatch } = isCommentAuthorized(comment, rawInput);
+      if (!isAuthorized) {
+        alert("비밀번호가 일치하지 않습니다. (관리자 비밀번호 또는 작성 시 입력한 비밀번호)");
+        return null;
+      }
+
+      return { isAdminMatch };
+    }
+
+    window.handleEditComment = (commentId) => {
+      const comment = currentComments[commentId];
+      if (!comment) {
+        alert("댓글 정보를 찾을 수 없습니다.");
+        return;
+      }
+
+      const authResult = ensureCommentAuthorization(comment, "수정");
+      if (!authResult) return;
+
+      const rawContent = prompt("수정할 댓글 내용을 입력하세요:", comment.content || "");
+      if (rawContent === null) return;
+
+      const nextContent = rawContent.trim();
+      if (!nextContent) {
+        alert("댓글 내용을 입력해주세요.");
+        return;
+      }
+
+      update(ref(db, `comments/${postId}/${commentId}`), {
+        content: nextContent,
+        updatedAt: new Date().toISOString()
+      }).catch((error) => {
+        console.error("댓글 수정 실패:", error);
+        alert("댓글 수정 중 오류가 발생했습니다.");
+      });
+    };
+
+    window.handleDeleteComment = (commentId) => {
+      const comment = currentComments[commentId];
+      if (!comment) {
+        alert("댓글 정보를 찾을 수 없습니다.");
+        return;
+      }
+
+      const authResult = ensureCommentAuthorization(comment, "삭제");
+      if (!authResult) return;
+
+      const isReply = Boolean(comment.parentId);
+      const confirmMsg = isReply
+        ? "이 답글을 삭제하시겠습니까?"
+        : "이 댓글과 연결된 답글까지 모두 삭제하시겠습니까?";
+
+      if (!confirm(confirmMsg)) return;
+
+      const deletionTasks = [remove(ref(db, `comments/${postId}/${commentId}`))];
+
+      if (!isReply) {
+        Object.keys(currentComments).forEach((key) => {
+          if (currentComments[key]?.parentId === commentId) {
+            deletionTasks.push(remove(ref(db, `comments/${postId}/${key}`)));
+          }
+        });
+      }
+
+      Promise.all(deletionTasks).catch((error) => {
+        console.error("댓글 삭제 실패:", error);
+        alert("댓글 삭제 중 오류가 발생했습니다.");
+      });
+    };
+
     if (!postId) {
       postArea.innerHTML = "<h2>잘못된 접근입니다.</h2>";
     } else {
@@ -257,6 +339,7 @@
 
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
         const comments = snapshot.val();
+        currentComments = comments || {};
         commentsList.innerHTML = "";
 
         if (!comments) {
@@ -264,29 +347,39 @@
           return;
         }
 
-        Object.keys(comments).forEach((key) => {
+        Object.keys(comments)
+          .sort((a, b) => new Date(comments[a]?.createdAt || 0) - new Date(comments[b]?.createdAt || 0))
+          .forEach((key) => {
           const c = comments[key];
           const isReply = !!c.parentId;
           const dateStr = new Date(c.createdAt).toLocaleString("ko-KR");
+          const editedLabel = c.updatedAt ? `<span class="comment-updated">(수정됨)</span>` : "";
 
           const commentEl = document.createElement("div");
           commentEl.className = `comment-card ${isReply ? 'reply' : ''}`;
           commentEl.innerHTML = `
             <div class="comment-meta">
               <span class="comment-author">${c.author}</span>
-              <span>${dateStr}</span>
+              <span>${dateStr} ${editedLabel}</span>
             </div>
-            <div>${c.content}</div>
-            ${!isReply ? `<button class="btn-reply-toggle" onclick="toggleReplyForm('${key}')">↳ 답글 달기</button>` : ''}
+            <div class="comment-content">${c.content}</div>
+            <div class="comment-actions">
+              ${!isReply ? `<button class="btn-reply-toggle" type="button" onclick="toggleReplyForm('${key}')">↳ 답글 달기</button>` : ''}
+              <button class="btn-comment-action" type="button" onclick="handleEditComment('${key}')">✏️ 수정</button>
+              <button class="btn-comment-action btn-comment-action--danger" type="button" onclick="handleDeleteComment('${key}')">🗑️ 삭제</button>
+            </div>
             
             <div id="replyForm-${key}" class="reply-form">
-              <input type="text" id="replyAuthor-${key}" placeholder="작성자 이름" style="width:100%; margin-bottom:6px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px;">
+              <div class="reply-form-row">
+                <input type="text" id="replyAuthor-${key}" placeholder="작성자 이름" style="width:100%; margin-bottom:6px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px;">
+                <input type="password" id="replyPassword-${key}" placeholder="비밀번호(선택)" style="width:100%; margin-bottom:6px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px;">
+              </div>
               <textarea id="replyContent-${key}" placeholder="답글을 입력하세요..." style="width:100%; height:50px; padding:6px; background:var(--card-bg); border:1px solid var(--border); color:var(--text-main); border-radius:4px; margin-bottom:6px;"></textarea>
               <button type="button" class="btn-submit" style="padding:4px 12px; font-size:0.8rem;" onclick="submitReply('${key}')">답글 등록</button>
             </div>
           `;
           commentsList.appendChild(commentEl);
-        });
+          });
       });
     }
 
@@ -368,16 +461,24 @@
 
     document.getElementById("commentForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      const author = document.getElementById("commentAuthor").value;
-      const content = document.getElementById("commentContent").value;
+      const author = document.getElementById("commentAuthor").value.trim();
+      const content = document.getElementById("commentContent").value.trim();
+      const password = document.getElementById("commentPassword").value.trim();
+
+      if (!author || !content) {
+        alert("작성자 이름과 댓글 내용을 입력해주세요.");
+        return;
+      }
 
       push(ref(db, `comments/${postId}`), {
         author: author,
         content: content,
+        password: password || null,
         createdAt: new Date().toISOString(),
         parentId: null
       }).then(() => {
         document.getElementById("commentContent").value = "";
+        document.getElementById("commentPassword").value = "";
       });
     });
 
@@ -387,8 +488,9 @@
     };
 
     window.submitReply = (parentId) => {
-      const author = document.getElementById(`replyAuthor-${parentId}`).value;
-      const content = document.getElementById(`replyContent-${parentId}`).value;
+      const author = document.getElementById(`replyAuthor-${parentId}`).value.trim();
+      const content = document.getElementById(`replyContent-${parentId}`).value.trim();
+      const password = document.getElementById(`replyPassword-${parentId}`).value.trim();
 
       if (!author || !content) {
         alert("이름과 답글 내용을 입력해주세요.");
@@ -398,10 +500,14 @@
       push(ref(db, `comments/${postId}`), {
         author: author,
         content: content,
+        password: password || null,
         createdAt: new Date().toISOString(),
         parentId: parentId
       }).then(() => {
         document.getElementById(`replyForm-${parentId}`).style.display = "none";
+        document.getElementById(`replyAuthor-${parentId}`).value = "";
+        document.getElementById(`replyContent-${parentId}`).value = "";
+        document.getElementById(`replyPassword-${parentId}`).value = "";
       });
     };
   </script>

@@ -75,3 +75,52 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.comment-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn-comment-action {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.btn-comment-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-comment-action--danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.comment-updated {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.reply-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .reply-form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
