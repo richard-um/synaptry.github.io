@@ -5,48 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Search Posts</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .search-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    
-    /* 검색 필터 박스 */
-    .search-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 30px;
-    }
-    .search-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-    .search-input-wrap { flex: 1; min-width: 200px; }
-    
-    .form-control {
-      width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text-main); font-size: 0.95rem; box-sizing: border-box;
-    }
-    .form-control:focus { outline: none; border-color: var(--accent); }
-
-    /* 필드 체크박스 옵션 */
-    .filter-options { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); }
-    .filter-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .filter-options input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
-
-    /* 검색 결과 카드 */
-    .result-item {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 16px;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .result-item:hover { border-color: var(--accent); transform: translateY(-2px); }
-    .result-item h3 { margin: 0 0 10px 0; font-size: 1.2rem; }
-    .result-item h3 a { color: var(--text-main); text-decoration: none; }
-    .result-item h3 a:hover { color: var(--accent); }
-    .result-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 10px; }
-    .result-summary { font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
-    .highlight { background: rgba(59, 130, 246, 0.3); color: #fff; padding: 0 2px; border-radius: 2px; }
-  </style>
+  
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./search.css">
 </head>
 <body>
   <header>
