@@ -49,7 +49,7 @@
           <h4>소프트웨어</h4>
           <p>웹/앱 개발, 알고리즘, 시스템 아키텍처 및 자동화 코드</p>
         </div>
-        <div class="card" data-category="Math">
+        <div class="card" data-category="Mathmatics">
           <div class="badge">Math</div>
           <h4>수학</h4>
           <p>선형대수학, 미적분학, 기하학, 확률통계 및 이산수학적 사고</p>
@@ -62,7 +62,7 @@
         <div class="card" data-category="Philosophy">
           <div class="badge">Philosophy</div>
           <h4>철학</h4>
-          <p>인공지능 윤리, 인식론, 존재론 등 동서양 철확 및 AI와의 사유 과정</p>
+          <p>인공지능 윤리, 인식론, 존재론 등 동서양 철학 및 AI와의 사유 과정</p>
         </div>
         <div class="card" data-category="Etc">
           <div class="badge">Etc</div>
@@ -75,7 +75,10 @@
     <!-- 최근 포스트 목록 섹션 -->
     <section class="posts-section" style="margin-top: 50px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 id="postsTitle" style="margin: 0;">최근 포스트</h3>
+        <h3 id="postsTitle" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
+          Recent Posts
+        </h3>
         <button id="resetCategoryBtn" style="display: none; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">🔄 전체 보기</button>
       </div>
       <div id="postsList" class="posts-list">
@@ -115,7 +118,7 @@
     let selectedCategory = null;
 
     function getCategoryName(cat) {
-      const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
+      const names = { Hardware: "Hardware", Software: "Software", Math: "Mathmatics", Physics: "Physics", Philosophy: "Philosophy", Etc: "Etc" };
       return names[cat] || cat;
     }
 
@@ -124,10 +127,16 @@
       let filteredPosts = allPosts;
       if (selectedCategory) {
         filteredPosts = allPosts.filter(p => p.category === selectedCategory);
-        postsTitle.innerText = `🏷️ ${getCategoryName(selectedCategory)} 포스트 (${filteredPosts.length})`;
+        postsTitle.innerHTML = `
+          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
+          ${getCategoryName(selectedCategory)} (${filteredPosts.length})
+        `;
         resetCategoryBtn.style.display = "block";
       } else {
-        postsTitle.innerText = "최근 포스트";
+        postsTitle.innerHTML = `
+          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
+          Recent Posts
+        `;
         resetCategoryBtn.style.display = "none";
       }
 
