@@ -17,20 +17,48 @@
     <div class="container header-container">
       <a href="./"><img src="wide_white_trans.png" alt="Synaptry" class="logo-img"></a>
       <p class="subtitle">AI와의 대화로 넓혀가는 기술, 수학, 그리고 철학의 지평</p>
-      
-      <div class="header-actions">
-        <a href="search.html" class="header-link header-link--primary">🔍 상세 검색</a>
-        <a href="write.html" class="header-link header-link--secondary">✍️ 글쓰기</a>
-      </div>
     </div>
   </header>
 
   <main class="container">
     <section class="intro">
-      <h2>About Synaptry</h2>
-      <p>
-        Synaptry는 하드웨어·소프트웨어·수학·물리학·철학에 대한 주제를 AI와 함께 탐구하고 기록하는 지식 아카이브입니다.
-      </p>
+      <div class="intro-actions">
+        <div class="intro-actions-left">
+          <button type="button" id="toggleClusterBtn" class="intro-action-btn intro-action-btn--toggle" aria-expanded="false">🌐 클러스터맵 보기</button>
+        </div>
+        <div class="intro-actions-right">
+          <a href="search.html" class="intro-action-btn intro-action-btn--primary">🔍 상세 검색</a>
+          <a href="write.html" class="intro-action-btn intro-action-btn--secondary">✍️ 글쓰기</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cluster-section is-hidden" id="clusterExplorer">
+      <div class="cluster-header">
+        <h3>Topic Cluster Map</h3>
+        <p>포스트 간 자동 연결 데이터를 기반으로 카테고리 간 관계를 시각화합니다.</p>
+      </div>
+      <div class="cluster-controls" aria-label="클러스터 필터">
+        <label for="clusterCategoryFilter">포커스 카테고리</label>
+        <select id="clusterCategoryFilter">
+          <option value="ALL">전체</option>
+          <option value="Hardware">하드웨어</option>
+          <option value="Software">소프트웨어</option>
+          <option value="Math">수학</option>
+          <option value="Physics">물리학</option>
+          <option value="Philosophy">철학</option>
+          <option value="Etc">기타</option>
+        </select>
+
+        <label for="clusterScoreFilter">최소 연결 점수</label>
+        <input id="clusterScoreFilter" type="range" min="10" max="90" step="5" value="20">
+        <span id="clusterScoreValue" class="cluster-score-value">20%</span>
+      </div>
+      <p id="clusterSourceNote" class="cluster-source-note">클러스터 구조를 준비 중입니다.</p>
+      <div id="clusterGraph" class="cluster-graph">
+        <p class="cluster-loading">클러스터 구조를 계산 중입니다...</p>
+      </div>
+      <div id="clusterInsights" class="cluster-insights"></div>
     </section>
 
     <!-- 카테고리 그리드 섹션 -->
@@ -112,11 +140,29 @@
     const postsTitle = document.getElementById("postsTitle");
     const resetCategoryBtn = document.getElementById("resetCategoryBtn");
     const pagination = document.getElementById("pagination");
+    const clusterGraph = document.getElementById("clusterGraph");
+    const clusterInsights = document.getElementById("clusterInsights");
+    const clusterCategoryFilter = document.getElementById("clusterCategoryFilter");
+    const clusterScoreFilter = document.getElementById("clusterScoreFilter");
+    const clusterScoreValue = document.getElementById("clusterScoreValue");
+    const clusterSourceNote = document.getElementById("clusterSourceNote");
+    const toggleClusterBtn = document.getElementById("toggleClusterBtn");
 
     const postsPerPage = 10;
     let allPosts = [];
     let selectedCategory = null;
     let currentPage = 1;
+    let relationsMap = {};
+    let clusterSource = "loading";
+
+    const categoryMeta = {
+      Hardware: { label: "하드웨어", color: "#f59e0b" },
+      Software: { label: "소프트웨어", color: "#3b82f6" },
+      Math: { label: "수학", color: "#10b981" },
+      Physics: { label: "물리학", color: "#ef4444" },
+      Philosophy: { label: "철학", color: "#8b5cf6" },
+      Etc: { label: "기타", color: "#94a3b8" }
+    };
 
     function normalizeCategory(cat) {
       if (!cat) return cat;
@@ -126,6 +172,249 @@
     function getCategoryName(cat) {
       const names = { Hardware: "Hardware", Software: "Software", Math: "Math", Mathmatics: "Math", Physics: "Physics", Philosophy: "Philosophy", Etc: "Etc" };
       return names[normalizeCategory(cat)] || cat;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getClusterFilters() {
+      return {
+        focusCategory: clusterCategoryFilter?.value || "ALL",
+        minScore: Math.max(0, Math.min(1, Number(clusterScoreFilter?.value || 20) / 100))
+      };
+    }
+
+    function updateClusterSourceNote() {
+      if (!clusterSourceNote) return;
+
+      if (clusterSource === "live") {
+        clusterSourceNote.textContent = "relations 데이터를 기반으로 최신 연결 구조를 표시 중입니다.";
+        return;
+      }
+
+      if (clusterSource === "unavailable") {
+        clusterSourceNote.textContent = "relations 데이터를 불러오지 못했습니다. 포스트 상세 페이지를 방문해 연결 캐시를 축적해 주세요.";
+        return;
+      }
+
+      clusterSourceNote.textContent = "클러스터 구조를 준비 중입니다.";
+    }
+
+    function buildClusterModel() {
+      const { focusCategory, minScore } = getClusterFilters();
+      const postsById = {};
+      allPosts.forEach((post) => {
+        postsById[post.id] = post;
+      });
+
+      const nodeMap = {};
+      Object.keys(categoryMeta).forEach((cat) => {
+        nodeMap[cat] = {
+          category: cat,
+          label: categoryMeta[cat].label,
+          color: categoryMeta[cat].color,
+          count: 0,
+          linkedScore: 0
+        };
+      });
+
+      allPosts.forEach((post) => {
+        const normalized = normalizeCategory(post.category);
+        if (nodeMap[normalized]) {
+          nodeMap[normalized].count += 1;
+        }
+      });
+
+      const edgeMap = {};
+      const edgeSeen = new Set();
+      const relationRoots = Object.keys(relationsMap || {});
+
+      relationRoots.forEach((sourceId) => {
+        const sourcePost = postsById[sourceId];
+        const sourceCategory = normalizeCategory(sourcePost?.category);
+        const items = relationsMap[sourceId]?.items || {};
+
+        Object.keys(items).forEach((targetId) => {
+          const targetPost = postsById[targetId];
+          const targetCategory = normalizeCategory(targetPost?.category);
+          if (!sourceCategory || !targetCategory || !nodeMap[sourceCategory] || !nodeMap[targetCategory]) return;
+
+          const score = Number(items[targetId]?.score || 0);
+          if (score < minScore) return;
+
+          if (focusCategory !== "ALL" && sourceCategory !== focusCategory && targetCategory !== focusCategory) {
+            return;
+          }
+
+          const pairId = [sourceId, targetId].sort().join("|");
+          if (edgeSeen.has(pairId)) return;
+          edgeSeen.add(pairId);
+
+          const edgeKey = [sourceCategory, targetCategory].sort().join("|");
+          if (!edgeMap[edgeKey]) {
+            edgeMap[edgeKey] = {
+              from: sourceCategory < targetCategory ? sourceCategory : targetCategory,
+              to: sourceCategory < targetCategory ? targetCategory : sourceCategory,
+              totalScore: 0,
+              count: 0,
+              best: {
+                score: 0,
+                sourceId: "",
+                sourceTitle: "",
+                targetId: "",
+                targetTitle: ""
+              }
+            };
+          }
+
+          edgeMap[edgeKey].totalScore += score;
+          edgeMap[edgeKey].count += 1;
+
+          if (score > edgeMap[edgeKey].best.score) {
+            edgeMap[edgeKey].best = {
+              score,
+              sourceId,
+              sourceTitle: sourcePost?.title || "",
+              targetId,
+              targetTitle: targetPost?.title || ""
+            };
+          }
+
+          nodeMap[sourceCategory].linkedScore += score;
+          nodeMap[targetCategory].linkedScore += score;
+        });
+      });
+
+      const nodes = Object.values(nodeMap)
+        .filter((node) => {
+          if (focusCategory === "ALL") {
+            return node.count > 0 || node.linkedScore > 0;
+          }
+          return node.category === focusCategory || node.linkedScore > 0;
+        })
+        .sort((a, b) => b.count - a.count);
+
+      const edges = Object.values(edgeMap).sort((a, b) => b.totalScore - a.totalScore);
+
+      return { nodes, edges };
+    }
+
+    function renderClusterGraph(model) {
+      if (!clusterGraph) return;
+      const { nodes, edges } = model;
+
+      if (!nodes.length || !edges.length) {
+        clusterGraph.innerHTML = `<p class="cluster-loading">필터 조건을 만족하는 연결 구조가 없습니다.</p>`;
+        return;
+      }
+
+      const width = 960;
+      const height = 430;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const ring = Math.min(170, 95 + nodes.length * 10);
+
+      const nodePositions = {};
+      nodes.forEach((node, index) => {
+        const angle = (-Math.PI / 2) + (2 * Math.PI * index / nodes.length);
+        nodePositions[node.category] = {
+          x: centerX + ring * Math.cos(angle),
+          y: centerY + ring * Math.sin(angle)
+        };
+      });
+
+      const maxScore = Math.max(...edges.map((edge) => edge.totalScore), 0.001);
+      const maxCount = Math.max(...nodes.map((node) => node.count), 1);
+
+      const edgeSvg = edges.map((edge) => {
+        const p1 = nodePositions[edge.from];
+        const p2 = nodePositions[edge.to];
+        if (!p1 || !p2) return "";
+        const ratio = edge.totalScore / maxScore;
+        const widthPx = (1.2 + ratio * 8).toFixed(2);
+        const opacity = (0.2 + ratio * 0.75).toFixed(2);
+        return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="var(--accent)" stroke-width="${widthPx}" stroke-opacity="${opacity}" />`;
+      }).join("");
+
+      const nodeSvg = nodes.map((node) => {
+        const p = nodePositions[node.category];
+        const radius = 30 + (node.count / maxCount) * 20;
+        const label = escapeHtml(node.label);
+        const short = label.length > 5 ? `${label.slice(0, 5)}…` : label;
+        return `
+          <g class="cluster-node-group">
+            <circle cx="${p.x}" cy="${p.y}" r="${radius.toFixed(1)}" fill="${node.color}1f" stroke="${node.color}" stroke-width="2" />
+            <text x="${p.x}" y="${p.y - 4}" text-anchor="middle" class="cluster-node-label">${escapeHtml(short)}</text>
+            <text x="${p.x}" y="${p.y + 14}" text-anchor="middle" class="cluster-node-count">${node.count} posts</text>
+          </g>
+        `;
+      }).join("");
+
+      clusterGraph.innerHTML = `
+        <svg class="cluster-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="카테고리 연결 클러스터 맵">
+          <g>${edgeSvg}</g>
+          <g>${nodeSvg}</g>
+        </svg>
+      `;
+    }
+
+    function renderClusterInsights(model) {
+      if (!clusterInsights) return;
+      const topEdges = model.edges.slice(0, 6);
+      if (!topEdges.length) {
+        clusterInsights.innerHTML = "";
+        return;
+      }
+
+      clusterInsights.innerHTML = topEdges.map((edge, index) => {
+        const fromLabel = categoryMeta[edge.from]?.label || edge.from;
+        const toLabel = categoryMeta[edge.to]?.label || edge.to;
+        const avgScore = Math.round((edge.totalScore / Math.max(1, edge.count)) * 100);
+        const sample = edge.best;
+
+        return `
+          <div class="cluster-insight-item">
+            <div class="cluster-insight-head">
+              <strong>#${index + 1} ${escapeHtml(fromLabel)} ↔ ${escapeHtml(toLabel)}</strong>
+              <span>${edge.count} links / avg ${avgScore}%</span>
+            </div>
+            <a href="post.html?id=${sample.sourceId}" class="cluster-insight-link">${escapeHtml(sample.sourceTitle || "대표 포스트")}</a>
+            <a href="post.html?id=${sample.targetId}" class="cluster-insight-link">${escapeHtml(sample.targetTitle || "연결 포스트")}</a>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderClusterExplorer() {
+      updateClusterSourceNote();
+
+      if (!allPosts.length) {
+        clusterGraph.innerHTML = `<p class="cluster-loading">포스트 데이터가 아직 없어 클러스터를 계산할 수 없습니다.</p>`;
+        clusterInsights.innerHTML = "";
+        return;
+      }
+
+      const model = buildClusterModel();
+      renderClusterGraph(model);
+      renderClusterInsights(model);
+    }
+
+    function setClusterVisibility(isVisible) {
+      if (!clusterGraph?.closest) return;
+      const clusterSection = clusterGraph.closest(".cluster-section");
+      if (!clusterSection) return;
+
+      clusterSection.classList.toggle("is-hidden", !isVisible);
+      if (toggleClusterBtn) {
+        toggleClusterBtn.setAttribute("aria-expanded", String(isVisible));
+        toggleClusterBtn.textContent = isVisible ? "🌐 클러스터맵 숨기기" : "🌐 클러스터맵 보기";
+      }
     }
 
     function renderPagination(totalPosts) {
@@ -211,6 +500,8 @@
       const data = snapshot.val();
       if (!data) {
         postsList.innerHTML = `<p style="color: var(--text-muted);">등록된 포스트가 없습니다.</p>`;
+        allPosts = [];
+        renderClusterExplorer();
         return;
       }
 
@@ -220,6 +511,17 @@
       })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       renderPosts();
+      renderClusterExplorer();
+    });
+
+    onValue(ref(db, "relations"), (snapshot) => {
+      relationsMap = snapshot.val() || {};
+      clusterSource = Object.keys(relationsMap).length ? "live" : "unavailable";
+      renderClusterExplorer();
+    }, () => {
+      relationsMap = {};
+      clusterSource = "unavailable";
+      renderClusterExplorer();
     });
 
     // 카테고리 카드 클릭 필터링
@@ -250,6 +552,28 @@
         document.querySelector(".posts-section").scrollIntoView({ behavior: 'smooth' });
       }
     });
+
+    if (clusterScoreValue && clusterScoreFilter) {
+      clusterScoreValue.textContent = `${clusterScoreFilter.value}%`;
+      clusterScoreFilter.addEventListener("input", () => {
+        clusterScoreValue.textContent = `${clusterScoreFilter.value}%`;
+        renderClusterExplorer();
+      });
+    }
+
+    if (clusterCategoryFilter) {
+      clusterCategoryFilter.addEventListener("change", () => {
+        renderClusterExplorer();
+      });
+    }
+
+    if (toggleClusterBtn) {
+      toggleClusterBtn.addEventListener("click", () => {
+        const clusterSection = clusterGraph?.closest(".cluster-section");
+        const isCurrentlyVisible = !clusterSection?.classList.contains("is-hidden");
+        setClusterVisibility(!isCurrentlyVisible);
+      });
+    }
   </script>
 </body>
 </html>
