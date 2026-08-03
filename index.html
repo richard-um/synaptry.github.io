@@ -24,7 +24,7 @@
     <section class="intro">
       <div class="intro-actions">
         <div class="intro-actions-left">
-          <button type="button" id="toggleClusterBtn" class="intro-action-btn intro-action-btn--toggle" aria-expanded="false">🌐 클러스터맵 보기</button>
+          <button type="button" id="toggleClusterBtn" class="intro-action-btn intro-action-btn--toggle" aria-expanded="true">🌐 클러스터맵 숨기기</button>
         </div>
         <div class="intro-actions-right">
           <a href="search.html" class="intro-action-btn intro-action-btn--primary">🔍 상세 검색</a>
@@ -33,7 +33,7 @@
       </div>
     </section>
 
-    <section class="cluster-section is-hidden" id="clusterExplorer">
+    <section class="cluster-section" id="clusterExplorer">
       <div class="cluster-header">
         <h3>Topic Cluster Map</h3>
         <p>포스트 간 자동 연결 데이터를 기반으로 카테고리 간 관계를 시각화합니다.</p>
@@ -63,7 +63,7 @@
 
     <!-- 카테고리 그리드 섹션 -->
     <section class="categories">
-      <h3>Categories</h3>
+      <h3>Dialogue Archive</h3>
       <div class="grid">
         <div class="card" data-category="Hardware">
           <div class="badge">Hardware</div>
@@ -99,13 +99,6 @@
     </section>
 
     <section class="posts-section">
-      <div class="posts-header">
-        <h3 id="postsTitle" class="posts-title">
-          <span class="posts-title-marker"></span>
-          Recent Posts
-        </h3>
-        <button id="resetCategoryBtn" class="reset-category-btn">🔄 전체 보기</button>
-      </div>
       <div id="postsList" class="posts-list">
         <p class="posts-loading">포스트 목록을 불러오는 중입니다...</p>
       </div>
@@ -137,8 +130,6 @@
     const db = getDatabase(app);
 
     const postsList = document.getElementById("postsList");
-    const postsTitle = document.getElementById("postsTitle");
-    const resetCategoryBtn = document.getElementById("resetCategoryBtn");
     const pagination = document.getElementById("pagination");
     const clusterGraph = document.getElementById("clusterGraph");
     const clusterInsights = document.getElementById("clusterInsights");
@@ -150,7 +141,7 @@
 
     const postsPerPage = 10;
     let allPosts = [];
-    let selectedCategory = null;
+    let selectedCategory = "Hardware";
     let currentPage = 1;
     let relationsMap = {};
     let clusterSource = "loading";
@@ -440,21 +431,14 @@
     }
 
     function renderPosts() {
+      document.querySelectorAll(".categories .card").forEach((card) => {
+        card.classList.toggle("active", normalizeCategory(card.getAttribute("data-category")) === selectedCategory);
+      });
+
       let filteredPosts = allPosts;
       if (selectedCategory) {
         const normalizedSelectedCategory = normalizeCategory(selectedCategory);
         filteredPosts = allPosts.filter(p => normalizeCategory(p.category) === normalizedSelectedCategory);
-        postsTitle.innerHTML = `
-          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
-          ${getCategoryName(normalizedSelectedCategory)} (${filteredPosts.length})
-        `;
-        resetCategoryBtn.style.display = "block";
-      } else {
-        postsTitle.innerHTML = `
-          <span style="display: inline-block; width: 4px; height: 18px; background: var(--accent); border-radius: 2px;"></span>
-          Recent Posts
-        `;
-        resetCategoryBtn.style.display = "none";
       }
 
       if (filteredPosts.length === 0) {
@@ -530,15 +514,7 @@
         selectedCategory = normalizeCategory(card.getAttribute("data-category"));
         currentPage = 1;
         renderPosts();
-        document.querySelector(".posts-section").scrollIntoView({ behavior: 'smooth' });
       });
-    });
-
-    // 전체 보기 버튼 클릭
-    resetCategoryBtn.addEventListener("click", () => {
-      selectedCategory = null;
-      currentPage = 1;
-      renderPosts();
     });
 
     pagination.addEventListener("click", (event) => {

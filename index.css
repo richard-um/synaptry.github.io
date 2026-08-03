@@ -1,3 +1,18 @@
+.card:hover {
+	transform: translateY(-4px);
+	border-color: var(--accent);
+}
+.card.active {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35), 0 0 24px rgba(56, 189, 248, 0.18);
+	background: linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(30, 41, 59, 0.95));
+	transform: translateY(-2px);
+}
+.card.active .badge {
+	background: rgba(56, 189, 248, 0.18);
+	color: #e0f2fe;
+	border: 1px solid rgba(56, 189, 248, 0.35);
+}
 .cluster-section {
 	margin-top: 34px;
 	margin-bottom: 28px;
@@ -8,6 +23,11 @@
 }
 
 .categories {
+	margin-top: 28px;
+	margin-bottom: 28px;
+}
+
+.posts-section {
 	margin-top: 28px;
 }
 
