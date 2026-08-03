@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synaptry | Write Post</title>
-  <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="./write.css">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./write.css">
 </head>
 <body>
   <header>
@@ -18,6 +17,16 @@
 
   <main class="write-container">
     <h2 style="margin-bottom: 24px; color: var(--accent);">새 대화 기록 작성</h2>
+
+    <div id="previewModal" class="preview-modal">
+      <div class="preview-modal-content">
+        <div class="preview-modal-header">
+          <h3>미리보기</h3>
+          <button type="button" class="btn-submit btn-secondary" id="closePreviewButton">닫기</button>
+        </div>
+        <div id="previewModalContent" class="preview-modal-body"></div>
+      </div>
+    </div>
     
     <form id="writeForm" autocomplete="off">
       <div class="form-group">
@@ -63,13 +72,16 @@
       </div>
 
       <div class="form-group">
-        <label>대화 본문 (Gemini 복사-붙여넣기 가능)</label>
-        <div id="postContent" class="editor-control" contenteditable="true" placeholder="Gemini와의 대화 내용을 복사해서 그대로 붙여넣으세요..."></div>
+        <label>대화 본문 (복사-붙여넣기 가능, Markdown 지원)</label>
+        <textarea id="postContent" class="editor-control" rows="16" placeholder="Gemini와의 대화 내용을 복사해서 그대로 붙여넣으세요..."></textarea>
       </div>
+
+      <input type="hidden" id="originalCreatedAt" value="">
 
       <div class="btn-group">
         <button type="button" class="btn-submit btn-secondary" onclick="history.back()">취소</button>
-        <button type="submit" class="btn-submit">발행하기</button>
+        <button type="button" class="btn-submit btn-secondary" id="previewButton">미리보기</button>
+        <button type="submit" class="btn-submit" id="submitButton">발행하기</button>
       </div>
     </form>
   </main>
@@ -80,9 +92,12 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBDEWtLLRoM0UbJgrcSfDRQRiiN7lclz6o",
@@ -96,14 +111,263 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false });
+
+    function renderMarkdown(source) {
+      const text = source || "";
+      if (!text) return "";
+
+      const mathParts = [];
+      const escaped = text.replace(/\$\$([\s\S]+?)\$\$|\$([^\n$]+?)\$/g, (match, block, inline) => {
+        const displayMode = Boolean(block);
+        const math = displayMode ? block : inline;
+        const rendered = katex.renderToString(math, {
+          displayMode,
+          throwOnError: false,
+          output: "html"
+        });
+        const token = `@@MATH_${mathParts.length}@@`;
+        mathParts.push(rendered);
+        return token;
+      });
+
+      let html = marked.parse(escaped, { gfm: true, breaks: true, headerIds: false, mangle: false });
+      html = html.replace(/@@MATH_(\d+)@@/g, (_, index) => mathParts[Number(index)] || "");
+      return html;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const editPostId = urlParams.get("edit");
+    const isEditMode = Boolean(editPostId);
 
     const writeForm = document.getElementById("writeForm");
     const postContent = document.getElementById("postContent");
+    const pageTitle = document.querySelector("main.write-container h2");
+    const submitButton = document.getElementById("submitButton");
+    const previewButton = document.getElementById("previewButton");
+
+    function fillForm(post) {
+      document.getElementById("postTitle").value = post.title || "";
+      document.getElementById("postCategory").value = post.category || "";
+      document.getElementById("aiModel").value = post.aiModel || "";
+      document.getElementById("authorName").value = post.author || "";
+      document.getElementById("postPassword").value = post.password || "";
+      document.getElementById("postSummary").value = post.summary || "";
+      postContent.value = post.content || "";
+
+      if (pageTitle) {
+        pageTitle.textContent = isEditMode ? "기존 대화 기록 수정" : "새 대화 기록 작성";
+      }
+      if (submitButton) {
+        submitButton.textContent = isEditMode ? "수정하기" : "발행하기";
+      }
+      document.getElementById("originalCreatedAt").value = post.createdAt || "";
+    }
+
+    function convertClipboardTextToMarkdown(rawText) {
+      if (!rawText) return "";
+
+      const normalized = rawText.replace(/\r/g, "").trim();
+      if (!normalized) return "";
+
+      const lines = normalized.split("\n");
+      const converted = [];
+
+      let pendingParagraph = [];
+
+      const flushParagraph = () => {
+        if (!pendingParagraph.length) return;
+        const paragraphText = pendingParagraph.join(" ").trim();
+        if (paragraphText) {
+          converted.push(paragraphText);
+        }
+        pendingParagraph = [];
+      };
+
+      const pushLine = (line) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          flushParagraph();
+          converted.push("");
+          return;
+        }
+
+        const markdownLike = /^(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|`[^`]+`|\*\*|__)/.test(trimmed);
+        const speakerMatch = trimmed.match(/^(User|You|Me|Assistant|Gemini|Bot|AI|Model)\s*[:\-]\s*(.*)$/i);
+        const mathBlock = /\$\$|\\\[|\\\(|\$/.test(trimmed);
+        const numberedListMatch = trimmed.match(/^(\d+)\.?\s+(.*)$/);
+        const bulletMatch = trimmed.match(/^[-*]\s+(.*)$/);
+
+        if (markdownLike) {
+          flushParagraph();
+          converted.push(trimmed);
+          return;
+        }
+
+        if (speakerMatch) {
+          flushParagraph();
+          const speaker = speakerMatch[1].trim();
+          const content = speakerMatch[2].trim();
+          converted.push(`> **${speaker}:** ${content}`);
+          return;
+        }
+
+        if (numberedListMatch) {
+          flushParagraph();
+          converted.push(`${numberedListMatch[1]}. ${numberedListMatch[2]}`);
+          return;
+        }
+
+        if (bulletMatch) {
+          flushParagraph();
+          converted.push(`- ${bulletMatch[1]}`);
+          return;
+        }
+
+        if (mathBlock && trimmed.length > 0) {
+          flushParagraph();
+          converted.push(trimmed);
+          return;
+        }
+
+        pendingParagraph.push(trimmed);
+      };
+
+      lines.forEach(pushLine);
+      flushParagraph();
+
+      return converted.join("\n");
+    }
+
+    function convertHtmlToMarkdown(html) {
+      if (!html || !html.trim()) return "";
+
+      const container = document.createElement("div");
+      container.innerHTML = html;
+
+      const convertNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.textContent || "";
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return "";
+        }
+
+        const tag = node.tagName.toLowerCase();
+        const children = Array.from(node.childNodes).map(convertNode).filter(Boolean);
+        const innerText = children.join("").trim();
+
+        if (tag === "br") return "\n";
+        if (tag === "strong" || tag === "b") return `**${innerText}**`;
+        if (tag === "em" || tag === "i") return `*${innerText}*`;
+        if (tag === "code") return `\`${innerText}\``;
+        if (tag === "pre") return `\n\n\`\`\`\n${innerText}\n\`\`\`\n\n`;
+        if (tag === "blockquote") return `> ${innerText.replace(/\n/g, "\n> ")}\n\n`;
+        if (tag === "h1") return `# ${innerText}\n\n`;
+        if (tag === "h2") return `## ${innerText}\n\n`;
+        if (tag === "h3") return `### ${innerText}\n\n`;
+        if (tag === "h4") return `#### ${innerText}\n\n`;
+        if (tag === "p" || tag === "div") return `${innerText}\n\n`;
+        if (tag === "ol") {
+          return children.map((child, index) => `${index + 1}. ${child.replace(/^-\s*/, "").trim()}`).join("\n") + "\n\n";
+        }
+        if (tag === "ul") {
+          return children.map((child) => `- ${child.replace(/^-\s*/, "").trim()}`).join("\n") + "\n\n";
+        }
+        if (tag === "li") return `${innerText}`;
+
+        return innerText;
+      };
+
+      const converted = convertNode(container).replace(/\n{3,}/g, "\n\n").trim();
+      return converted || "";
+    }
+
+    function convertClipboardContentToMarkdown(html, text) {
+      if (html && html.trim()) {
+        const convertedHtml = convertHtmlToMarkdown(html);
+        if (convertedHtml) return convertedHtml;
+      }
+
+      const sourceText = (text || html || "").trim();
+      if (!sourceText) return "";
+
+      const normalized = sourceText
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<(?:div|p|li|ul|ol|section|article|h[1-6]|blockquote|pre|code)[^>]*>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/\s+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      return convertClipboardTextToMarkdown(normalized);
+    }
+
+    function openPreviewModal() {
+      const popup = document.getElementById("previewModal");
+      if (!popup) return;
+      document.getElementById("previewModalContent").innerHTML = renderMarkdown(postContent.value || "");
+      popup.style.display = "flex";
+    }
+
+    function closePreviewModal() {
+      const popup = document.getElementById("previewModal");
+      if (popup) popup.style.display = "none";
+    }
+
+    previewButton.addEventListener("click", openPreviewModal);
+    document.getElementById("closePreviewButton").addEventListener("click", closePreviewModal);
+    document.getElementById("previewModal").addEventListener("click", (event) => {
+      if (event.target.id === "previewModal") closePreviewModal();
+    });
+    postContent.addEventListener("input", () => {});
+    postContent.addEventListener("paste", (event) => {
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) return;
+
+      const html = clipboardData.getData("text/html");
+      const text = clipboardData.getData("text/plain");
+
+      if (html || text) {
+        event.preventDefault();
+
+        const markdownText = convertClipboardContentToMarkdown(html, text);
+        if (!markdownText) return;
+
+        const start = postContent.selectionStart;
+        const end = postContent.selectionEnd;
+        const currentValue = postContent.value;
+        const nextValue = currentValue.slice(0, start) + markdownText + currentValue.slice(end);
+        postContent.value = nextValue;
+        const newCursor = start + markdownText.length;
+        postContent.setSelectionRange(newCursor, newCursor);
+      }
+    });
+
+    if (isEditMode) {
+      get(ref(db, `posts/${editPostId}`)).then((snapshot) => {
+        const post = snapshot.val();
+        if (!post) {
+          alert("수정할 포스트를 찾을 수 없습니다.");
+          window.location.href = "index.html";
+          return;
+        }
+        fillForm(post);
+      }).catch(() => {
+        alert("포스트 정보를 불러오지 못했습니다.");
+        window.location.href = "index.html";
+      });
+    }
 
     // 페이지 진입 또는 뒤로 가기/앞으로 가기로 접근할 때 입력 폼 강제 리셋 (잔상 방지)
     window.addEventListener("pageshow", () => {
-      if (writeForm) writeForm.reset();
-      if (postContent) postContent.innerHTML = "";
+      if (writeForm && !isEditMode) writeForm.reset();
+      if (postContent && !isEditMode) postContent.value = "";
     });
 
     writeForm.addEventListener("submit", (e) => {
@@ -115,7 +379,7 @@
       const author = document.getElementById("authorName").value.trim() || "익명";
       const password = document.getElementById("postPassword").value.trim();
       const summary = document.getElementById("postSummary").value.trim();
-      const content = postContent.innerHTML.trim();
+      const content = postContent.value.trim();
 
       if (!title || !category || !password) {
         alert("필수 항목(제목, 카테고리, 비밀번호)을 입력해 주세요.");
@@ -127,6 +391,7 @@
         return;
       }
 
+      const originalCreatedAt = document.getElementById("originalCreatedAt").value;
       const newPost = {
         title: title,
         category: category,
@@ -135,14 +400,28 @@
         password: password,
         summary: summary,
         content: content,
-        createdAt: new Date().toISOString()
+        createdAt: isEditMode ? originalCreatedAt : new Date().toISOString()
       };
+
+      if (isEditMode) {
+        newPost.updatedAt = new Date().toISOString();
+        update(ref(db, `posts/${editPostId}`), newPost)
+          .then(() => {
+            alert("글이 성공적으로 수정되었습니다!");
+            window.location.href = `post.html?id=${editPostId}`;
+          })
+          .catch((error) => {
+            console.error("수정 오류:", error);
+            alert("글 수정 중 오류가 발생했습니다.");
+          });
+        return;
+      }
 
       push(ref(db, "posts"), newPost)
         .then(() => {
           alert("글이 성공적으로 발행되었습니다!");
           writeForm.reset();
-          postContent.innerHTML = "";
+          postContent.value = "";
           window.location.href = "index.html";
         })
         .catch((error) => {

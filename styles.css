@@ -179,10 +179,121 @@ textarea.form-control {
   border-radius: 6px;
   color: var(--text-main);
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.85;
   box-sizing: border-box;
   outline: none;
   overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+.editor-control p,
+.editor-control div {
+  margin: 0 0 0.8em;
+}
+
+.editor-preview-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editor-preview {
+  min-height: 350px;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  line-height: 1.8;
+  overflow-y: auto;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.98rem;
+}
+
+.editor-preview h1,
+.editor-preview h2,
+.editor-preview h3,
+.editor-preview h4 {
+  color: var(--accent);
+  margin: 0.8em 0 0.5em;
+  line-height: 1.25;
+}
+
+.editor-preview p,
+.editor-preview ul,
+.editor-preview ol,
+.editor-preview blockquote,
+.editor-preview pre {
+  margin: 0 0 0.9em;
+}
+
+.editor-preview table,
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.editor-preview th,
+.editor-preview td,
+.post-content th,
+.post-content td {
+  border: 1px solid var(--border);
+  padding: 0.6em 0.8em;
+  text-align: left;
+}
+
+.editor-preview pre,
+.post-content pre {
+  background: rgba(2, 8, 23, 0.8);
+  padding: 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.editor-preview code,
+.post-content code {
+  background: rgba(56, 189, 248, 0.14);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  font-family: "Consolas", "Monaco", monospace;
+}
+
+.editor-preview blockquote,
+.post-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-muted);
+  margin: 0 0 1em;
+}
+
+.editor-preview h1,
+.editor-preview h2,
+.editor-preview h3 {
+  color: var(--accent);
+  margin: 0 0 0.6em;
+}
+
+.editor-preview hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
+.editor-preview code {
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+
+.editor-preview pre {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
 }
 
 .editor-control:focus { 
@@ -197,6 +308,26 @@ textarea.form-control {
 
 .editor-control * {
   max-height: none !important;
+}
+
+.editor-control p,
+.editor-control div,
+.editor-control ul,
+.editor-control ol,
+.editor-control blockquote,
+.editor-control pre {
+  margin: 0 0 0.9em;
+  line-height: 1.85;
+}
+
+.editor-control > :last-child,
+.post-content > :last-child {
+  margin-bottom: 0;
+}
+
+.editor-control > :first-child,
+.post-content > :first-child {
+  margin-top: 0;
 }
 
 .btn-group { 
@@ -215,6 +346,56 @@ textarea.form-control {
 .btn-secondary:hover { 
   border-color: var(--text-main); 
   color: var(--text-main); 
+}
+
+.preview-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 8, 23, 0.8);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.preview-modal-content {
+  width: min(900px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.preview-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.preview-modal-body {
+  line-height: 1.8;
+  color: var(--text-main);
+}
+
+.preview-modal-body h1,
+.preview-modal-body h2,
+.preview-modal-body h3,
+.preview-modal-body h4 {
+  color: var(--accent);
+  margin: 0.8em 0 0.5em;
+}
+
+.preview-modal-body p,
+.preview-modal-body ul,
+.preview-modal-body ol,
+.preview-modal-body blockquote,
+.preview-modal-body pre {
+  margin: 0 0 0.9em;
 }
 
 /* --- Post Detail Page (상세 페이지 영역) --- */
@@ -269,6 +450,22 @@ textarea.form-control {
   color: #ffffff; 
 }
 
+.btn-edit-post {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-post:hover {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
 .btn-delete-post {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid #ef4444;
@@ -305,18 +502,46 @@ textarea.form-control {
   color: var(--text-main); 
   font-size: 0.95rem; 
   line-height: 1.6; 
-  white-space: pre-line; 
 }
 
-/* --- Gemini 대화 및 Rich Text 본문 스타일 보정 (첫 줄 잘림 방지) --- */
-.post-content { 
-  line-height: 1.8; 
-  font-size: 1.05rem; 
-  margin-bottom: 50px; 
+.post-summary-markdown p,
+.post-summary-markdown ul,
+.post-summary-markdown ol,
+.post-summary-markdown blockquote,
+.post-summary-markdown pre {
+  margin: 0 0 0.6em;
+  font-size: 1.05rem;
+  margin-bottom: 50px;
   width: 100%;
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
+  white-space: normal;
+  word-break: break-word;
+  letter-spacing: 0.01em;
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4 {
+  color: var(--accent);
+  margin: 1.2em 0 0.6em;
+  line-height: 1.25;
+}
+
+.post-content ul,
+.post-content ol {
+  padding-left: 1.4rem;
+  margin: 0 0 1em;
+}
+
+.post-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-muted);
+  margin: 0 0 1em;
 }
 
 .post-content * {
@@ -324,8 +549,14 @@ textarea.form-control {
   overflow: visible !important;
 }
 
-.post-content p { 
-  margin-bottom: 1em; 
+.post-content p,
+.post-content div,
+.post-content ul,
+.post-content ol,
+.post-content blockquote,
+.post-content pre {
+  margin: 0 0 1.05em;
+  line-height: 2.0;
 }
 
 .post-content pre, 
@@ -333,6 +564,12 @@ textarea.form-control {
 .post-content table { 
   max-width: 100%; 
   overflow-x: auto !important; 
+}
+
+.post-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 1em 0;
 }
 
 /* --- Flow Diagram Container & Git Graph --- */

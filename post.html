@@ -56,6 +56,9 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -72,6 +75,30 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false });
+
+    function renderMarkdown(source) {
+      const text = source || "";
+      if (!text) return "";
+
+      const mathParts = [];
+      const escaped = text.replace(/\$\$([\s\S]+?)\$\$|\$([^\n$]+?)\$/g, (match, block, inline) => {
+        const displayMode = Boolean(block);
+        const math = displayMode ? block : inline;
+        const rendered = katex.renderToString(math, {
+          displayMode,
+          throwOnError: false,
+          output: "html"
+        });
+        const token = `@@MATH_${mathParts.length}@@`;
+        mathParts.push(rendered);
+        return token;
+      });
+
+      let html = marked.parse(escaped, { gfm: true, breaks: true, headerIds: false, mangle: false });
+      html = html.replace(/@@MATH_(\d+)@@/g, (_, index) => mathParts[Number(index)] || "");
+      return html;
+    }
 
     const ADMIN_PASSWORD = "djatldms2@";
     const urlParams = new URLSearchParams(window.location.search);
@@ -79,6 +106,67 @@
 
     const postArea = document.getElementById("postArea");
     const commentsList = document.getElementById("commentsList");
+    let currentPost = null;
+
+    function handleEditPost() {
+      if (!postId) {
+        alert("잘못된 접근입니다.");
+        return;
+      }
+
+      const rawInput = prompt("포스트를 수정하려면 비밀번호를 입력하세요:");
+      if (rawInput === null) return;
+
+      const inputPw = rawInput.trim();
+      const isAuthorMatch = currentPost?.password && inputPw === currentPost.password;
+      const isAdminMatch = inputPw === ADMIN_PASSWORD;
+
+      if (isAuthorMatch || isAdminMatch) {
+        window.location.href = `write.html?edit=${postId}`;
+      } else {
+        alert("비밀번호가 일치하지 않습니다.");
+      }
+    }
+
+    function handleDeletePost() {
+      if (!postId) {
+        alert("잘못된 접근입니다.");
+        return;
+      }
+
+      const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
+      if (rawInput === null) return;
+
+      const inputPw = rawInput.trim();
+      const isAuthorMatch = currentPost?.password && inputPw === currentPost.password;
+      const isAdminMatch = inputPw === ADMIN_PASSWORD;
+
+      if (isAuthorMatch || isAdminMatch) {
+        const confirmMsg = isAdminMatch
+          ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?"
+          : "정말로 이 포스트를 삭제하시겠습니까?";
+
+        if (confirm(confirmMsg)) {
+          remove(ref(db, `posts/${postId}`));
+          remove(ref(db, `comments/${postId}`));
+          alert("포스트가 성공적으로 삭제되었습니다.");
+          window.location.href = "index.html";
+        }
+      } else {
+        alert("비밀번호가 일치하지 않습니다.");
+      }
+    }
+
+    function toggleFlowView() {
+      const flowContainer = document.getElementById("flowDiagramContainer");
+      if (flowContainer) {
+        flowContainer.classList.toggle("active");
+      }
+    }
+
+    window.handleEditPost = handleEditPost;
+    window.handleDeletePost = handleDeletePost;
+    window.toggleFlowView = toggleFlowView;
 
     function getCategoryName(cat) {
       const names = { Hardware: "하드웨어", Software: "소프트웨어", Math: "수학", Physics: "물리학", Philosophy: "철학", Etc: "기타" };
@@ -95,6 +183,7 @@
           return;
         }
 
+        currentPost = post;
         const dateStr = post.createdAt ? post.createdAt.split("T")[0].replace(/-/g, ".") : "";
 
         postArea.innerHTML = `
@@ -108,59 +197,24 @@
                 <span>🤖 ${post.aiModel || 'AI Collaboration'}</span>
               </div>
               <div class="action-btn-group">
-                <button class="btn-flow-toggle" id="toggleFlowBtn">🌿 대화 흐름보기</button>
-                <button class="btn-delete-post" id="deletePostBtn">🗑️ 삭제</button>
+                <button class="btn-flow-toggle" id="toggleFlowBtn" type="button" onclick="toggleFlowView()">🌿 대화 흐름보기</button>
+                <button class="btn-edit-post" id="editPostBtn" type="button" onclick="handleEditPost()">✏️ 수정하기</button>
+                <button class="btn-delete-post" id="deletePostBtn" type="button" onclick="handleDeletePost()">🗑️ 삭제</button>
               </div>
             </div>
             
             ${post.summary ? `
               <div class="post-summary-box">
                 <strong>💬 시작 프롬프트</strong>
-                <p>${post.summary}</p>
+                <div class="post-summary-markdown">${renderMarkdown(post.summary || "")}</div>
               </div>
             ` : ''}
           </div>
           
-          <div class="post-content" id="mainPostContent">${post.content || ""}</div>
+          <div class="post-content" id="mainPostContent">${renderMarkdown(post.content || "")}</div>
         `;
 
         setupFlowDiagram(post);
-
-        const toggleBtn = document.getElementById("toggleFlowBtn");
-        const flowContainer = document.getElementById("flowDiagramContainer");
-
-        if (toggleBtn && flowContainer) {
-          toggleBtn.addEventListener("click", () => {
-            flowContainer.classList.toggle("active");
-          });
-        }
-
-        const deleteBtn = document.getElementById("deletePostBtn");
-        if (deleteBtn) {
-          deleteBtn.addEventListener("click", () => {
-            const rawInput = prompt("포스트를 삭제하려면 비밀번호를 입력하세요:");
-            if (rawInput === null) return;
-
-            const inputPw = rawInput.trim();
-            const isAuthorMatch = post.password && inputPw === post.password;
-            const isAdminMatch = inputPw === ADMIN_PASSWORD;
-
-            if (isAuthorMatch || isAdminMatch) {
-              const confirmMsg = isAdminMatch 
-                ? "⚡ 관리자 권한으로 이 포스트를 강제 삭제하시겠습니까?" 
-                : "정말로 이 포스트를 삭제하시겠습니까?";
-
-              if (confirm(confirmMsg)) {
-                remove(ref(db, `posts/${postId}`));
-                remove(ref(db, `comments/${postId}`));
-                alert("포스트가 성공적으로 삭제되었습니다.");
-                window.location.href = "index.html";
-              }
-            } else {
-              alert("비밀번호가 일치하지 않습니다.");
-            }
-          });
-        }
       });
 
       onValue(ref(db, `comments/${postId}`), (snapshot) => {
